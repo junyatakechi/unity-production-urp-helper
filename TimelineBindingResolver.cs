@@ -5,7 +5,7 @@ using UnityEngine.Playables;
 using UnityEngine.Timeline;
 
 
-namespace JayT.UnityProductionUrpHelper.Editor
+namespace JayT.UnityProductionUrpHelper
 {
     [ExecuteAlways]
     [RequireComponent(typeof(PlayableDirector))]

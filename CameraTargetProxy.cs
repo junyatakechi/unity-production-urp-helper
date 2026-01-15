@@ -1,13 +1,16 @@
 using UnityEngine;
 
-
-[ExecuteAlways]
-public class CameraTargetProxy : MonoBehaviour
+namespace JayT.UnityProductionUrpHelper
 {
-    public Transform targetPoint;
-
-    void LateUpdate()
+    [ExecuteAlways]
+    public class CameraTargetProxy : MonoBehaviour
     {
-        transform.position = targetPoint.position;
-    }
+        public Transform targetPoint;
+
+        void LateUpdate()
+        {
+            transform.position = targetPoint.position;
+        }
+}
+
 }
