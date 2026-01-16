@@ -50,20 +50,17 @@ namespace JayT.UnityProductionUrpHelper
             if (director == null || !autoRewindOnStop)
                 return;
 
-            // エディタモードでのみ状態監視
-            if (!Application.isPlaying)
+            // エディタモードとランタイムの両方で状態監視
+            PlayState currentState = director.state;
+
+            if (lastPlayState == PlayState.Playing && currentState == PlayState.Paused)
             {
-                PlayState currentState = director.state;
-
-                if (lastPlayState == PlayState.Playing && currentState == PlayState.Paused)
-                {
-                    director.time = 0;
-                    director.Evaluate();
-                    Debug.Log("[TimelineCustomTransporter] Rewound to start (Editor mode)");
-                }
-
-                lastPlayState = currentState;
+                director.time = 0;
+                director.Evaluate();
+                Debug.Log($"[TimelineCustomTransporter] Rewound to start (isPlaying: {Application.isPlaying})");
             }
+
+            lastPlayState = currentState;
         }
 
         private void OnPlayableDirectorStopped(PlayableDirector stoppedDirector)
@@ -72,7 +69,7 @@ namespace JayT.UnityProductionUrpHelper
             {
                 director.time = 0;
                 director.Evaluate();
-                Debug.Log("[TimelineCustomTransporter] Rewound to start (Runtime)");
+                Debug.Log("[TimelineCustomTransporter] Rewound to start (Runtime event)");
             }
         }
 #else
