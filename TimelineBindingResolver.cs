@@ -39,11 +39,13 @@ namespace JayT.UnityProductionUrpHelper
         public void ResolveBindings()
         {
             if (_director == null || _director.playableAsset == null) return;
-
             if (_director.playableAsset is not TimelineAsset timelineAsset) return;
 
             foreach (var output in timelineAsset.outputs)
             {
+                // MarkerTrackは除外
+                if (output.sourceObject is MarkerTrack) continue;
+
                 var entry = bindings.Find(b => b.trackName == output.streamName);
                 if (entry == null || string.IsNullOrEmpty(entry.targetObjectName)) continue;
 
@@ -81,7 +83,7 @@ namespace JayT.UnityProductionUrpHelper
             if (_director == null || _director.playableAsset == null) return;
             if (_director.playableAsset is not TimelineAsset timelineAsset) return;
 
-            // 1. 現在のデータを一時的に辞書に保存 (名前をキーにしてオブジェクト名を保持)
+            // 1. 現在のデータを一時的に辞書に保存
             var existingBindings = new Dictionary<string, string>();
             foreach (var b in bindings)
             {
@@ -95,15 +97,17 @@ namespace JayT.UnityProductionUrpHelper
             bindings.Clear();
             foreach (var output in timelineAsset.outputs)
             {
+                // MarkerTrackは除外
+                if (output.sourceObject is MarkerTrack) continue;
+                if (output.streamName is "Markers") continue;
+
                 string trackName = output.streamName;
                 if (string.IsNullOrEmpty(trackName)) continue;
 
-                // 以前と同じ名前のトラックがあれば、その targetObjectName を引き継ぐ
-                string targetName = "";
-                if (existingBindings.ContainsKey(trackName))
-                {
-                    targetName = existingBindings[trackName];
-                }
+                // 以前のバインディング情報を引き継ぐ
+                string targetName = existingBindings.ContainsKey(trackName) 
+                    ? existingBindings[trackName] 
+                    : "";
 
                 bindings.Add(new BindingEntry 
                 { 
@@ -115,5 +119,4 @@ namespace JayT.UnityProductionUrpHelper
             Debug.Log($"[TimelineBindingResolver] Updated {bindings.Count} tracks (Preserved existing names)");
         }
     }
-        
 }
