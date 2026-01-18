@@ -1,12 +1,11 @@
 {
-    "name": "com.junyatakechi.production-urp-helper.Editor",
+    "name": "com.jayt.production-urp-helper",
     "rootNamespace": "",
     "references": [
-        "com.junyatakechi.production-urp-helper"
+        "Unity.Timeline",
+        "Unity.RenderPipelines.Universal.Runtime"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
