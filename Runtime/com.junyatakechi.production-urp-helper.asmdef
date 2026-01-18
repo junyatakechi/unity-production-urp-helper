@@ -1,0 +1,17 @@
+{
+    "name": "com.junyatakechi.production-urp-helper",
+    "rootNamespace": "",
+    "references": [
+        "Unity.Timeline",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

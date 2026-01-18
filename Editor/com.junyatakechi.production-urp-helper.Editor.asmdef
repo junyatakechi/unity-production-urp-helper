@@ -1,0 +1,18 @@
+{
+    "name": "com.junyatakechi.production-urp-helper.Editor",
+    "rootNamespace": "",
+    "references": [
+        "com.junyatakechi.production-urp-helper"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

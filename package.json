@@ -1,6 +1,6 @@
 {
-  "name": "com.junyatakechi.unity-production-urp-helper",
+  "name": "com.junyatakechi.production-urp-helper",
   "version": "1.0.0",
-  "displayName": "Unity Production URP Helper",
+  "displayName": "ProductionUrpHelper",
   "unity": "2022.3"
 }
