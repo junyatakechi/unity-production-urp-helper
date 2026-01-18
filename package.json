@@ -1,6 +1,11 @@
 {
-  "name": "com.junyatakechi.production-urp-helper",
+  "name": "com.jayt.production-urp-helper",
   "version": "1.0.0",
   "displayName": "ProductionUrpHelper",
-  "unity": "2022.3"
+  "description": "URPプロジェクトの本番環境向けヘルパーツール",
+  "unity": "2022.3",
+  "author": {
+    "name": "jayt",
+    "url": "https://github.com/junyatakechi"
+  }
 }
