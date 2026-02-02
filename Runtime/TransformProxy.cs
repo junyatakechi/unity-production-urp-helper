@@ -6,21 +6,26 @@ namespace JayT.UnityProductionUrpHelper
     {
         public enum SearchMethod
         {
-            DirectReference,  // 直接アサイン（同一シーン用）
-            ByName,          // 名前検索
-            ByTag            // タグ検索
+            DirectReference,
+            ByName,
+            ByTag
         }
 
         [SerializeField] private SearchMethod searchMethod = SearchMethod.DirectReference;
         
-        [SerializeField] private Transform point;  // DirectReference用
-        [SerializeField] private string targetName;  // ByName用
-        [SerializeField] private string targetTag;   // ByTag用
+        [SerializeField] private Transform point;
+        [SerializeField] private string targetName;
+        [SerializeField] private string targetTag;
         
         [SerializeField] private bool copyPosition = true;
         [SerializeField] private bool copyRotation = true;
+        
+        [SerializeField] private Vector3 positionScale = Vector3.one;
 
         private Transform targetTransform;
+        private Vector3 initialTargetPosition;
+        private Vector3 initialSelfPosition;
+        private bool isInitialized = false;
 
         private void Start()
         {
@@ -71,8 +76,19 @@ namespace JayT.UnityProductionUrpHelper
         {
             if (targetTransform != null)
             {
+                if (!isInitialized)
+                {
+                    initialTargetPosition = targetTransform.position;
+                    initialSelfPosition = transform.position;
+                    isInitialized = true;
+                }
+
                 if (copyPosition)
-                    transform.position = targetTransform.position;
+                {
+                    Vector3 offset = targetTransform.position - initialTargetPosition;
+                    Vector3 scaledOffset = Vector3.Scale(offset, positionScale);
+                    transform.position = initialSelfPosition + scaledOffset;
+                }
                 
                 if (copyRotation)
                     transform.rotation = targetTransform.rotation;
