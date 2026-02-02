@@ -48,6 +48,18 @@ namespace JayT.UnityProductionUrpHelper
         [SerializeField]
         private float fixedZRotation = 0f;
 
+        private void Start()
+        {
+            // 再生開始時にGameObjectのtransform値を取得
+            SyncFromTransform();
+        }
+
+        private void OnValidate()
+        {
+            // Inspector上で値が変更されたらGameObjectのtransformに反映
+            SyncToTransform();
+        }
+
         protected override void PostPipelineStageCallback(
             CinemachineVirtualCameraBase vcam,
             CinemachineCore.Stage stage, 
@@ -97,6 +109,40 @@ namespace JayT.UnityProductionUrpHelper
 
                 state.RawOrientation = Quaternion.Euler(rot);
             }
+        }
+
+        /// <summary>
+        /// GameObjectのtransformから値を取得
+        /// </summary>
+        private void SyncFromTransform()
+        {
+            Vector3 pos = transform.position;
+            fixedXPosition = pos.x;
+            fixedYPosition = pos.y;
+            fixedZPosition = pos.z;
+
+            Vector3 rot = transform.eulerAngles;
+            fixedXRotation = rot.x;
+            fixedYRotation = rot.y;
+            fixedZRotation = rot.z;
+        }
+
+        /// <summary>
+        /// fixedの値をGameObjectのtransformに反映
+        /// </summary>
+        private void SyncToTransform()
+        {
+            Vector3 pos = transform.position;
+            pos.x = fixedXPosition;
+            pos.y = fixedYPosition;
+            pos.z = fixedZPosition;
+            transform.position = pos;
+
+            Vector3 rot = transform.eulerAngles;
+            rot.x = fixedXRotation;
+            rot.y = fixedYRotation;
+            rot.z = fixedZRotation;
+            transform.eulerAngles = rot;
         }
 
         /// <summary>
