@@ -26,9 +26,6 @@ namespace JayT.UnityProductionUrpHelper
         [SerializeField]
         private float fixedZPosition = 0f;
 
-        [SerializeField]
-        private bool lockPositionOnStart = true;
-
         [Header("Rotation Lock")]
         [SerializeField]
         private bool lockRotationX = false;
@@ -48,26 +45,16 @@ namespace JayT.UnityProductionUrpHelper
         [SerializeField]
         private float fixedZRotation = 0f;
 
-        [SerializeField]
-        private bool lockRotationOnStart = true;
-
         private void Start()
         {
-            if (lockPositionOnStart)
-            {
-                Vector3 pos = transform.position;
-                fixedXPosition = pos.x;
-                fixedYPosition = pos.y;
-                fixedZPosition = pos.z;
-            }
-
-            if (lockRotationOnStart)
-            {
-                Vector3 rot = transform.eulerAngles;
-                fixedXRotation = rot.x;
-                fixedYRotation = rot.y;
-                fixedZRotation = rot.z;
-            }
+          Vector3 pos = transform.position;
+          Vector3 rot = transform.eulerAngles;
+          fixedXPosition = pos.x;
+          fixedYPosition = pos.y;
+          fixedZPosition = pos.z;
+          fixedXRotation = rot.x;
+          fixedYRotation = rot.y;
+          fixedZRotation = rot.z;
         }
 
         private void LateUpdate()
@@ -159,28 +146,6 @@ namespace JayT.UnityProductionUrpHelper
         public void SetFixedRotationZ(float z)
         {
             fixedZRotation = z;
-        }
-
-        /// <summary>
-        /// 現在の座標を固定値として設定
-        /// </summary>
-        public void LockCurrentPosition()
-        {
-            Vector3 pos = transform.position;
-            fixedXPosition = pos.x;
-            fixedYPosition = pos.y;
-            fixedZPosition = pos.z;
-        }
-
-        /// <summary>
-        /// 現在の回転を固定値として設定
-        /// </summary>
-        public void LockCurrentRotation()
-        {
-            Vector3 rot = transform.eulerAngles;
-            fixedXRotation = rot.x;
-            fixedYRotation = rot.y;
-            fixedZRotation = rot.z;
         }
     }
 }
