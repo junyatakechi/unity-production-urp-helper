@@ -3,7 +3,8 @@
     "rootNamespace": "",
     "references": [
         "Unity.Timeline",
-        "Unity.RenderPipelines.Universal.Runtime"
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Cinemachine"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
