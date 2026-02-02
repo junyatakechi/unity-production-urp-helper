@@ -20,7 +20,8 @@ namespace JayT.UnityProductionUrpHelper
         [SerializeField] private bool copyPosition = true;
         [SerializeField] private bool copyRotation = true;
         
-        [SerializeField] private Vector3 positionScale = Vector3.one;
+        [SerializeField] private bool useRelativeMovement = false;
+        [SerializeField] private Vector3 relativePositionScale = Vector3.one;
 
         private Transform targetTransform;
         private Vector3 initialTargetPosition;
@@ -76,18 +77,27 @@ namespace JayT.UnityProductionUrpHelper
         {
             if (targetTransform != null)
             {
-                if (!isInitialized)
-                {
-                    initialTargetPosition = targetTransform.position;
-                    initialSelfPosition = transform.position;
-                    isInitialized = true;
-                }
-
                 if (copyPosition)
                 {
-                    Vector3 offset = targetTransform.position - initialTargetPosition;
-                    Vector3 scaledOffset = Vector3.Scale(offset, positionScale);
-                    transform.position = initialSelfPosition + scaledOffset;
+                    if (!useRelativeMovement)
+                    {
+                        // 単純コピー
+                        transform.position = targetTransform.position;
+                    }
+                    else
+                    {
+                        // 倍率モード：初期位置からの差分に倍率を適用
+                        if (!isInitialized)
+                        {
+                            initialTargetPosition = targetTransform.position;
+                            initialSelfPosition = transform.position;
+                            isInitialized = true;
+                        }
+                        
+                        Vector3 offset = targetTransform.position - initialTargetPosition;
+                        Vector3 scaledOffset = Vector3.Scale(offset, relativePositionScale);
+                        transform.position = initialSelfPosition + scaledOffset;
+                    }
                 }
                 
                 if (copyRotation)
