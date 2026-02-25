@@ -18,7 +18,7 @@ namespace JayT.UnityProductionUrpHelper.Editor
 
         private NamingMode namingMode = NamingMode.ClipName;
 
-        [MenuItem("Tools/Extract Animation Clips")]
+        [MenuItem("Tools/JayT/ProductionUrpHelper/Extract Animation Clips")]
         static void ShowWindow()
         {
             GetWindow<ExtractAnimationClips>("Extract Animations");
