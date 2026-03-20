@@ -33,6 +33,7 @@ namespace JayT.UnityProductionUrpHelper
         [SerializeField] private Vector3 relativeBasePosition;
         [SerializeField] private Vector3 relativeBaseRotation;
         [SerializeField] private Vector3 relativePositionScale = Vector3.one;
+        [SerializeField] private Vector3 relativeRotationScale = Vector3.one;
 
         private Transform targetTransform;
         private Vector3 previousTargetPosition;
@@ -129,9 +130,9 @@ namespace JayT.UnityProductionUrpHelper
 
             Vector3 targetEuler = targetTransform.eulerAngles;
             transform.eulerAngles = new Vector3(
-                relativeBaseRotation.x + (copyRotationX ? targetEuler.x : 0f),
-                relativeBaseRotation.y + (copyRotationY ? targetEuler.y : 0f),
-                relativeBaseRotation.z + (copyRotationZ ? targetEuler.z : 0f)
+                relativeBaseRotation.x + (copyRotationX ? targetEuler.x * relativeRotationScale.x : 0f),
+                relativeBaseRotation.y + (copyRotationY ? targetEuler.y * relativeRotationScale.y : 0f),
+                relativeBaseRotation.z + (copyRotationZ ? targetEuler.z * relativeRotationScale.z : 0f)
             );
         }
     }
