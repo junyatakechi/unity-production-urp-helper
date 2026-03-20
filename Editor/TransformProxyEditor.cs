@@ -11,10 +11,19 @@ namespace JayT.UnityProductionUrpHelper
             serializedObject.Update();
 
             // Target
-            EditorGUILayout.PropertyField(serializedObject.FindProperty("searchMethod"));
-            EditorGUILayout.PropertyField(serializedObject.FindProperty("point"));
-            EditorGUILayout.PropertyField(serializedObject.FindProperty("targetName"));
-            EditorGUILayout.PropertyField(serializedObject.FindProperty("targetTag"));
+            SerializedProperty searchMethodProp = serializedObject.FindProperty("searchMethod");
+            EditorGUILayout.PropertyField(searchMethodProp);
+
+            var searchMethod = (TransformProxy.SearchMethod)searchMethodProp.enumValueIndex;
+            switch (searchMethod)
+            {
+                case TransformProxy.SearchMethod.DirectReference:
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty("point"));
+                    break;
+                case TransformProxy.SearchMethod.ByName:
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty("targetName"));
+                    break;
+            }
 
             // Mode
             EditorGUILayout.Space();

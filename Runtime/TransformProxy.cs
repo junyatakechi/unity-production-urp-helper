@@ -8,15 +8,13 @@ namespace JayT.UnityProductionUrpHelper
         public enum SearchMethod
         {
             DirectReference,
-            ByName,
-            ByTag
+            ByName
         }
 
-        [SerializeField] private SearchMethod searchMethod = SearchMethod.DirectReference;
+        [SerializeField] private SearchMethod searchMethod = SearchMethod.ByName;
 
         [SerializeField] private Transform point;
         [SerializeField] private string targetName;
-        [SerializeField] private string targetTag;
 
         public enum MovingCopyMode { Absolute, Relative }
         [SerializeField] private MovingCopyMode movingCopyMode = MovingCopyMode.Absolute;
@@ -65,16 +63,6 @@ namespace JayT.UnityProductionUrpHelper
                     }
                     break;
 
-                case SearchMethod.ByTag:
-                    if (!string.IsNullOrEmpty(targetTag))
-                    {
-                        GameObject targetObj = GameObject.FindGameObjectWithTag(targetTag);
-                        if (targetObj != null)
-                            targetTransform = targetObj.transform;
-                        else
-                            Debug.LogWarning($"TransformProxy: タグ '{targetTag}' が見つかりません");
-                    }
-                    break;
             }
         }
 
