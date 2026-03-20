@@ -22,16 +22,16 @@ namespace JayT.UnityProductionUrpHelper
         [SerializeField] private bool copyPositionX = true;
         [SerializeField] private bool copyPositionY = true;
         [SerializeField] private bool copyPositionZ = true;
+        [SerializeField] private Vector3 positionOffset;
 
         [Header("Copy Rotation")]
         [SerializeField] private bool copyRotationX = true;
         [SerializeField] private bool copyRotationY = true;
         [SerializeField] private bool copyRotationZ = true;
+        [SerializeField] private Vector3 rotationOffset;
 
-        [Header("Relative Position Movement")]
+        [Header("Relative Mode")]
         [SerializeField] private bool useRelativePositionMovement = false;
-        [SerializeField] private Vector3 relativeBasePosition;
-        [SerializeField] private Vector3 relativeBaseRotation;
         [SerializeField] private Vector3 relativePositionScale = Vector3.one;
         [SerializeField] private Vector3 relativeRotationScale = Vector3.one;
 
@@ -91,16 +91,16 @@ namespace JayT.UnityProductionUrpHelper
         {
             Vector3 targetPos = targetTransform.position;
             transform.position = new Vector3(
-                copyPositionX ? targetPos.x : 0f,
-                copyPositionY ? targetPos.y : 0f,
-                copyPositionZ ? targetPos.z : 0f
+                positionOffset.x + (copyPositionX ? targetPos.x : 0f),
+                positionOffset.y + (copyPositionY ? targetPos.y : 0f),
+                positionOffset.z + (copyPositionZ ? targetPos.z : 0f)
             );
 
             Vector3 targetEuler = targetTransform.eulerAngles;
             transform.eulerAngles = new Vector3(
-                copyRotationX ? targetEuler.x : 0f,
-                copyRotationY ? targetEuler.y : 0f,
-                copyRotationZ ? targetEuler.z : 0f
+                rotationOffset.x + (copyRotationX ? targetEuler.x : 0f),
+                rotationOffset.y + (copyRotationY ? targetEuler.y : 0f),
+                rotationOffset.z + (copyRotationZ ? targetEuler.z : 0f)
             );
         }
 
@@ -123,16 +123,16 @@ namespace JayT.UnityProductionUrpHelper
             }
 
             transform.position = new Vector3(
-                relativeBasePosition.x + (copyPositionX ? accumulatedOffset.x : 0f),
-                relativeBasePosition.y + (copyPositionY ? accumulatedOffset.y : 0f),
-                relativeBasePosition.z + (copyPositionZ ? accumulatedOffset.z : 0f)
+                positionOffset.x + (copyPositionX ? accumulatedOffset.x : 0f),
+                positionOffset.y + (copyPositionY ? accumulatedOffset.y : 0f),
+                positionOffset.z + (copyPositionZ ? accumulatedOffset.z : 0f)
             );
 
             Vector3 targetEuler = targetTransform.eulerAngles;
             transform.eulerAngles = new Vector3(
-                relativeBaseRotation.x + (copyRotationX ? targetEuler.x * relativeRotationScale.x : 0f),
-                relativeBaseRotation.y + (copyRotationY ? targetEuler.y * relativeRotationScale.y : 0f),
-                relativeBaseRotation.z + (copyRotationZ ? targetEuler.z * relativeRotationScale.z : 0f)
+                rotationOffset.x + (copyRotationX ? targetEuler.x * relativeRotationScale.x : 0f),
+                rotationOffset.y + (copyRotationY ? targetEuler.y * relativeRotationScale.y : 0f),
+                rotationOffset.z + (copyRotationZ ? targetEuler.z * relativeRotationScale.z : 0f)
             );
         }
     }
