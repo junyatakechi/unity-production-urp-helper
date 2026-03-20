@@ -18,20 +18,19 @@ namespace JayT.UnityProductionUrpHelper
         [SerializeField] private string targetName;
         [SerializeField] private string targetTag;
 
-        [Header("Copy Position")]
+        public enum MovingCopyMode { Absolute, Relative }
+        [SerializeField] private MovingCopyMode movingCopyMode = MovingCopyMode.Absolute;
+
         [SerializeField] private bool copyPositionX = true;
         [SerializeField] private bool copyPositionY = true;
         [SerializeField] private bool copyPositionZ = true;
         [SerializeField] private Vector3 positionOffset;
 
-        [Header("Copy Rotation")]
         [SerializeField] private bool copyRotationX = true;
         [SerializeField] private bool copyRotationY = true;
         [SerializeField] private bool copyRotationZ = true;
         [SerializeField] private Vector3 rotationOffset;
 
-        [Header("Relative Mode")]
-        [SerializeField] private bool useRelativePositionMovement = false;
         [SerializeField] private Vector3 relativePositionScale = Vector3.one;
         [SerializeField] private Vector3 relativeRotationScale = Vector3.one;
 
@@ -44,7 +43,7 @@ namespace JayT.UnityProductionUrpHelper
         private void Start()
         {
             ResolveTarget();
-            applyMethod = useRelativePositionMovement ? ApplyRelative : ApplyAbsolute;
+            applyMethod = movingCopyMode == MovingCopyMode.Relative ? ApplyRelative : ApplyAbsolute;
         }
 
         private void ResolveTarget()
@@ -86,6 +85,11 @@ namespace JayT.UnityProductionUrpHelper
 
             applyMethod();
         }
+
+        // モード別の挙動:
+        // | モード   | Position                    | Rotation                    |
+        // | Absolute | offset + target値           | offset + target値           |
+        // | Relative | offset + 変動累積値 * scale | offset + target値 * scale   |
 
         private void ApplyAbsolute()
         {
