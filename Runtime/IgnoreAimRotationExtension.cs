@@ -5,9 +5,9 @@ using UnityEngine;
 /// CinemachineのAim（LookAt）による回転調整を軸ごとに無視するExtension。
 /// 有効にした軸は、Aimステージの調整を無視してvcam GameObjectの元のtransform回転をスループットします。
 /// </summary>
-[AddComponentMenu("Cinemachine/Extensions/Lock Aim Rotation")]
+[AddComponentMenu("Cinemachine/Extensions/Ignore Aim Rotation")]
 [SaveDuringPlay]
-public class LockAimRotationExtension : CinemachineExtension
+public class IgnoreAimRotationExtension : CinemachineExtension
 {
     [System.Serializable]
     public struct AxisPassthrough
