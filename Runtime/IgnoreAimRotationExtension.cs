@@ -5,25 +5,19 @@ using UnityEngine;
 /// CinemachineのAim（LookAt）による回転調整を軸ごとに無視するExtension。
 /// 有効にした軸は、Aimステージの調整を無視してvcam GameObjectの元のtransform回転をスループットします。
 /// </summary>
+[ExecuteAlways]
 [AddComponentMenu("Cinemachine/Extensions/Ignore Aim Rotation")]
 [SaveDuringPlay]
 public class IgnoreAimRotationExtension : CinemachineExtension
 {
-    [System.Serializable]
-    public struct AxisPassthrough
-    {
-        [Tooltip("この軸のAimによる回転調整を無視し、vcam GameObjectの元のtransform回転をスループットする")]
-        public bool Enabled;
-    }
-
     [Tooltip("X軸（ピッチ）のAimを無視")]
-    public AxisPassthrough X;
+    public bool X;
 
     [Tooltip("Y軸（ヨー）のAimを無視")]
-    public AxisPassthrough Y;
+    public bool Y;
 
     [Tooltip("Z軸（ロール）のAimを無視")]
-    public AxisPassthrough Z;
+    public bool Z;
 
     protected override void PostPipelineStageCallback(
         CinemachineVirtualCameraBase vcam,
@@ -34,7 +28,7 @@ public class IgnoreAimRotationExtension : CinemachineExtension
         if (stage != CinemachineCore.Stage.Aim)
             return;
 
-        if (!X.Enabled && !Y.Enabled && !Z.Enabled)
+        if (!X && !Y && !Z)
             return;
 
         // パイプライン実行中はCinemachineがまだvcam.transformを更新していないため、
@@ -42,9 +36,9 @@ public class IgnoreAimRotationExtension : CinemachineExtension
         var originalEuler = vcam.transform.eulerAngles;
         var aimEuler = state.RawOrientation.eulerAngles;
 
-        float x = X.Enabled ? originalEuler.x : aimEuler.x;
-        float y = Y.Enabled ? originalEuler.y : aimEuler.y;
-        float z = Z.Enabled ? originalEuler.z : aimEuler.z;
+        float x = X ? originalEuler.x : aimEuler.x;
+        float y = Y ? originalEuler.y : aimEuler.y;
+        float z = Z ? originalEuler.z : aimEuler.z;
 
         state.RawOrientation = Quaternion.Euler(x, y, z);
     }
