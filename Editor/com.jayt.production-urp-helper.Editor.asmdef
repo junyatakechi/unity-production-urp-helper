@@ -2,7 +2,8 @@
     "name": "com.jayt.production-urp-helper.Editor",
     "rootNamespace": "",
     "references": [
-        "com.jayt.production-urp-helper"
+        "com.jayt.production-urp-helper",
+        "Cinemachine"
     ],
     "includePlatforms": [
         "Editor"
