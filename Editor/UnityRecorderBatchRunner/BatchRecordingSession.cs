@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Recorder;
+using UnityEditor.Recorder.Encoder;
 using UnityEditor.Recorder.Input;
 using UnityEngine.SceneManagement;
 using System.IO;
@@ -69,7 +70,31 @@ namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
             }
 
             movieSettings.ImageInputSettings = cameraInput;
+            movieSettings.AudioInputSettings.PreserveAudio = settings.includeAudio;
             movieSettings.FrameRate = settings.targetFPS;
+
+            if (settings.encoder == "ProRes")
+            {
+                var proRes = new ProResEncoderSettings();
+                proRes.Format = settings.proResCodec switch
+                {
+                    "ap4x" => ProResEncoderSettings.OutputFormat.ProRes4444XQ,
+                    "ap4h" => ProResEncoderSettings.OutputFormat.ProRes4444,
+                    "apch" => ProResEncoderSettings.OutputFormat.ProRes422HQ,
+                    "apcn" => ProResEncoderSettings.OutputFormat.ProRes422,
+                    "apcs" => ProResEncoderSettings.OutputFormat.ProRes422LT,
+                    "apco" => ProResEncoderSettings.OutputFormat.ProRes422Proxy,
+                    _      => ProResEncoderSettings.OutputFormat.ProRes4444XQ,
+                };
+                movieSettings.EncoderSettings = proRes;
+            }
+            else
+            {
+                movieSettings.EncoderSettings = new CoreEncoderSettings
+                {
+                    Codec = CoreEncoderSettings.OutputCodec.MP4,
+                };
+            }
 
             var controllerSettings = ScriptableObject.CreateInstance<RecorderControllerSettings>();
             controllerSettings.AddRecorderSettings(movieSettings);

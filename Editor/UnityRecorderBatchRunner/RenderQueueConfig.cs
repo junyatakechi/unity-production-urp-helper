@@ -17,6 +17,11 @@ namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
         public bool capFPS;
         /// <summary>"4K" (3840x2160), "2K" (2560x1440), "1080p" (1920x1080), "720p" (1280x720)</summary>
         public string resolution;
+        /// <summary>"H264" or "ProRes"</summary>
+        public string encoder;
+        /// <summary>ProRes only. "ap4x"=4444XQ, "ap4h"=4444, "apch"=422HQ, "apcn"=422, "apcs"=422LT, "apco"=422Proxy</summary>
+        public string proResCodec;
+        public bool includeAudio;
     }
 
     [Serializable]

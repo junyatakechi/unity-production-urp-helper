@@ -1,0 +1,24 @@
+{
+  "settings": {
+    "targetFPS": 60,
+    "capFPS": false,
+    "resolution": "4K",
+    "encoder": "ProRes",
+    "proResCodec": "ap4x",
+    "includeAudio": true
+  },
+  "renderingList": [
+    {
+      "renderingId": "r022",
+      "scene": {
+        "background": "Skystage",
+        "main": "Main",
+        "timeline": "022"
+      },
+      "frameInterval": {
+        "start": 600,
+        "end": 1800
+      }
+    }
+  ]
+}
