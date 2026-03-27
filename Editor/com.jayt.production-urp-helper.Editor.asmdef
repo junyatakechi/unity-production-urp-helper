@@ -3,7 +3,9 @@
     "rootNamespace": "",
     "references": [
         "com.jayt.production-urp-helper",
-        "Cinemachine"
+        "Cinemachine",
+        "Unity.Recorder",
+        "Unity.Recorder.Editor"
     ],
     "includePlatforms": [
         "Editor"
