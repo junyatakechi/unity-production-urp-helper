@@ -106,28 +106,28 @@ namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
                     }
                 }
 
-                GUILayout.Space(2);
-                _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.Height(110));
-                for (int i = 0; i < _config.renderingList.Length; i++)
+                if (true)
                 {
-                    var item = _config.renderingList[i];
-                    bool inRange = i >= _rangeFrom && i <= _rangeTo;
+                    GUILayout.Space(2);
+                    _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.Height(110));
+                    for (int i = 0; i < _config.renderingList.Length; i++)
+                    {
+                        var item = _config.renderingList[i];
+                        bool inRange = i >= _rangeFrom && i < _rangeTo;
 
-                    if (IsBatchRunning)
-                    {
-                        int currentIdx = PlayerPrefs.GetInt("JayT_RenderIndex", 0);
-                        string status = i < currentIdx ? "✓" : i == currentIdx ? "▶" : " ";
-                        EditorGUILayout.LabelField($"{status} {i}. {item.renderingId}  [{item.frameInterval.start}-{item.frameInterval.end}]");
-                    }
-                    else
-                    {
-                        using (new EditorGUI.DisabledScope(!inRange))
+                        if (IsBatchRunning)
                         {
-                            EditorGUILayout.LabelField($"{i}. {item.renderingId}  [{item.frameInterval.start}-{item.frameInterval.end}]");
+                            int currentIdx = PlayerPrefs.GetInt("JayT_RenderIndex", 0);
+                            string status = i < currentIdx ? "✓" : i == currentIdx ? "▶" : " ";
+                            EditorGUILayout.LabelField($"{status} {i}. {item.renderingId}  [{item.frameInterval.start}-{item.frameInterval.end}]");
+                        }
+                        else if (inRange)
+                        {
+                            EditorGUILayout.LabelField($"  {i}. {item.renderingId}  [{item.frameInterval.start}-{item.frameInterval.end}]");
                         }
                     }
+                    EditorGUILayout.EndScrollView();
                 }
-                EditorGUILayout.EndScrollView();
             }
 
             GUILayout.Space(10);
@@ -136,7 +136,7 @@ namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
             {
                 int currentIdx = PlayerPrefs.GetInt("JayT_RenderIndex", 0);
                 int endIdx     = PlayerPrefs.GetInt("JayT_RenderIndexEnd", _rangeTo);
-                int total      = endIdx - PlayerPrefs.GetInt("JayT_RenderIndexStart", _rangeFrom) + 1;
+                int total      = endIdx - PlayerPrefs.GetInt("JayT_RenderIndexStart", _rangeFrom);
                 int progress   = currentIdx - PlayerPrefs.GetInt("JayT_RenderIndexStart", _rangeFrom) + 1;
                 EditorGUILayout.HelpBox($"Rendering {Mathf.Max(1, progress)} / {total}  ({_config?.renderingList[currentIdx].renderingId ?? ""})", MessageType.Info);
 
@@ -170,7 +170,9 @@ namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
                 return;
             }
             _config = JsonUtility.FromJson<RenderQueueConfig>(File.ReadAllText(resolved));
-            Debug.Log($"[UnityRecorderBatchRunner] Config loaded: {_config.renderingList?.Length ?? 0} items");
+            _rangeFrom = 0;
+            _rangeTo = _config.renderingList?.Length ?? 0;
+            Debug.Log($"[UnityRecorderBatchRunner] Config loaded: {_rangeTo} items");
         }
 
         public static void StopBatch()
@@ -204,7 +206,7 @@ namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
 
             var config = JsonUtility.FromJson<RenderQueueConfig>(File.ReadAllText(resolved));
 
-            if (index > endIndex || index >= config.renderingList.Length)
+            if (index >= endIndex || index >= config.renderingList.Length)
             {
                 Debug.Log("[UnityRecorderBatchRunner] All renders complete.");
                 PlayerPrefs.DeleteKey("JayT_RenderIndex");

@@ -19,6 +19,18 @@
         "start": 600,
         "end": 1800
       }
+    },
+    {
+      "renderingId": "r022a",
+      "scene": {
+        "background": "Skystage",
+        "main": "Main",
+        "timeline": "022"
+      },
+      "frameInterval": {
+        "start": 600,
+        "end": 1800
+      }
     }
   ]
 }
