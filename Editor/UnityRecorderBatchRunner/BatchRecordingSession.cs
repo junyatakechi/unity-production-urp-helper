@@ -49,8 +49,9 @@ namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
 
         private static void StartRecording(RenderingItem item, RenderQueueSettings settings)
         {
+            string outputFolder = PlayerPrefs.GetString("JayT_OutputPath", "");
             var movieSettings = ScriptableObject.CreateInstance<MovieRecorderSettings>();
-            movieSettings.OutputFile = $"Recordings/{item.renderingId}";
+            movieSettings.OutputFile = Path.Combine(outputFolder, item.renderingId);
             movieSettings.name = item.renderingId;
 
             var cameraInput = new CameraInputSettings

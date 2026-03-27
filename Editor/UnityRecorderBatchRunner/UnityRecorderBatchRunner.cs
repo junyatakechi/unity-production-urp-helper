@@ -12,6 +12,7 @@ namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
     public class UnityRecorderBatchRunner : EditorWindow
     {
         private string _jsonPath = "";
+        private string _outputPath = "";
         private RenderQueueConfig _config;
 
         [MenuItem("Tools/JayT/ProductionUrpHelper/UnityRecorderBatchRunner")]
@@ -22,6 +23,7 @@ namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
 
         private void OnEnable()
         {
+            _outputPath = PlayerPrefs.GetString("JayT_OutputPath", "");
             if (IsBatchRunning)
             {
                 string path = PlayerPrefs.GetString("JayT_ConfigPath", "");
@@ -66,6 +68,18 @@ namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
                     if (GUILayout.Button("Load Config"))
                         TryLoadConfig(_jsonPath);
                 }
+
+                GUILayout.Space(4);
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    _outputPath = EditorGUILayout.TextField("Output Folder", _outputPath);
+                    if (GUILayout.Button("...", GUILayout.Width(30)))
+                    {
+                        string selected = EditorUtility.OpenFolderPanel("Select Output Folder", _outputPath, "");
+                        if (!string.IsNullOrEmpty(selected))
+                            _outputPath = selected;
+                    }
+                }
             }
 
             if (_config != null)
@@ -87,12 +101,13 @@ namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
             }
             else
             {
-                using (new EditorGUI.DisabledScope(_config == null))
+                using (new EditorGUI.DisabledScope(_config == null || string.IsNullOrEmpty(_outputPath)))
                 {
                     if (GUILayout.Button("Start Batch Render"))
                     {
                         PlayerPrefs.SetInt("JayT_RenderIndex", 0);
                         PlayerPrefs.SetString("JayT_ConfigPath", _jsonPath);
+                        PlayerPrefs.SetString("JayT_OutputPath", _outputPath);
                         PlayerPrefs.Save();
                         RunNext();
                     }
@@ -116,6 +131,7 @@ namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
         {
             PlayerPrefs.DeleteKey("JayT_RenderIndex");
             PlayerPrefs.DeleteKey("JayT_ConfigPath");
+            PlayerPrefs.DeleteKey("JayT_OutputPath");
             PlayerPrefs.Save();
             if (EditorApplication.isPlaying)
                 EditorApplication.ExitPlaymode();
@@ -144,6 +160,7 @@ namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
                 Debug.Log("[UnityRecorderBatchRunner] All renders complete.");
                 PlayerPrefs.DeleteKey("JayT_RenderIndex");
                 PlayerPrefs.DeleteKey("JayT_ConfigPath");
+                PlayerPrefs.DeleteKey("JayT_OutputPath");
                 PlayerPrefs.Save();
                 return;
             }
