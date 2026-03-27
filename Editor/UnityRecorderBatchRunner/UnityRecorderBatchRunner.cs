@@ -140,7 +140,9 @@ namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
                 int endIdx     = PlayerPrefs.GetInt("JayT_RenderIndexEnd", _rangeTo);
                 int total      = endIdx - PlayerPrefs.GetInt("JayT_RenderIndexStart", _rangeFrom);
                 int progress   = currentIdx - PlayerPrefs.GetInt("JayT_RenderIndexStart", _rangeFrom) + 1;
-                EditorGUILayout.HelpBox($"Rendering {Mathf.Max(1, progress)} / {total}  ({_config?.renderingList[currentIdx].renderingId ?? ""})", MessageType.Info);
+                string renderingId = (_config != null && currentIdx < _config.renderingList.Length)
+                    ? _config.renderingList[currentIdx].renderingId : "";
+                EditorGUILayout.HelpBox($"Rendering {Mathf.Max(1, progress)} / {total}  ({renderingId})", MessageType.Info);
 
                 if (GUILayout.Button("Stop Batch"))
                     StopBatch();
