@@ -89,7 +89,7 @@ namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
             if (_config != null)
             {
                 GUILayout.Space(8);
-                EditorGUILayout.LabelField("Settings", $"FPS: {_config.settings.targetFPS}  |  {_config.settings.resolution}  |  {_config.settings.encoder}  |  Audio: {_config.settings.includeAudio}");
+                EditorGUILayout.LabelField("Settings", $"FPS: {_config.settings.targetFPS}  |  CapFPS: {_config.settings.capFPS}  |  Audio: {_config.settings.includeAudio}  |  Resolution: {_config.settings.resolution}  |  Encoder: {_config.settings.encoder}");
 
                 GUILayout.Space(4);
                 EditorGUILayout.LabelField($"Queue: {_config.renderingList.Length} items", EditorStyles.boldLabel);

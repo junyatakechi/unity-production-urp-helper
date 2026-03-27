@@ -1,11 +1,11 @@
 {
   "settings": {
     "targetFPS": 60,
-    "capFPS": false,
+    "capFPS": true,
+    "includeAudio": true,
     "resolution": "4K",
     "encoder": "ProRes",
-    "proResCodec": "ap4x",
-    "includeAudio": true
+    "proResCodec": "ap4x"
   },
   "renderingList": [
     {
