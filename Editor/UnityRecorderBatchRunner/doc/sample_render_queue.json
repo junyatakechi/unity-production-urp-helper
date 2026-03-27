@@ -21,14 +21,14 @@
       }
     },
     {
-      "renderingId": "r022a",
+      "renderingId": "r029",
       "scene": {
         "background": "Skystage",
         "main": "Main",
-        "timeline": "022"
+        "timeline": "029"
       },
       "frameInterval": {
-        "start": 600,
+        "start": 1450,
         "end": 1800
       }
     }
