@@ -5,7 +5,8 @@
         "com.jayt.production-urp-helper",
         "Cinemachine",
         "Unity.Recorder",
-        "Unity.Recorder.Editor"
+        "Unity.Recorder.Editor",
+        "Unity.Timeline"
     ],
     "includePlatforms": [
         "Editor"
