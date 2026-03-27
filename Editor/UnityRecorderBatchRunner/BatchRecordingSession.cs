@@ -5,7 +5,6 @@ using UnityEditor.Recorder.Encoder;
 using UnityEditor.Recorder.Input;
 using UnityEngine.Playables;
 using UnityEngine.SceneManagement;
-using UnityEngine.Timeline;
 using System.IO;
 
 namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
@@ -47,18 +46,12 @@ namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
             if (bgScene.IsValid())
                 SceneManager.SetActiveScene(bgScene);
 
-            // Timelineをフレーム0から評価した後、指定フレームにシークする
-            // （フレーム0の設定を反映させた上で録画開始位置に移動）
-            foreach (var director in Object.FindObjectsByType<PlayableDirector>(FindObjectsSortMode.None))
-            {
-                double fps = (director.playableAsset is TimelineAsset tl)
-                    ? tl.editorSettings.fps
-                    : config.settings.targetFPS;
-                director.time = item.frameInterval.start / fps;
-                director.Evaluate();
-            }
-
             StartRecording(item, config.settings);
+
+            // RunNext()でplayOnAwake=falseに設定済みのため、ここで明示的にPlay()する。
+            // Recorder開始後にPlay()することで、initialTimeから録画が始まる。
+            foreach (var director in Object.FindObjectsByType<PlayableDirector>(FindObjectsSortMode.None))
+                director.Play();
         }
 
         private static void StartRecording(RenderingItem item, RenderQueueSettings settings)
@@ -111,7 +104,7 @@ namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
 
             var controllerSettings = ScriptableObject.CreateInstance<RecorderControllerSettings>();
             controllerSettings.AddRecorderSettings(movieSettings);
-            // TimelineはstartTimeSecからスタートするため、Recorderは0から(end-start)フレームを録画する
+            // directorはinitialTimeからスタート済みのため、Recorderは0から(end-start)フレームを録画する
             int durationFrames = item.frameInterval.end - item.frameInterval.start;
             controllerSettings.SetRecordModeToFrameInterval(0, durationFrames);
             controllerSettings.FrameRate = settings.targetFPS;

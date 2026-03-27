@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using UnityEngine.Playables;
+using UnityEngine.Timeline;
 using System.IO;
 
 namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
@@ -235,6 +237,20 @@ namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
             EditorSceneManager.OpenScene(bgPath, OpenSceneMode.Single);
             EditorSceneManager.OpenScene(mainPath, OpenSceneMode.Additive);
             EditorSceneManager.OpenScene(timelinePath, OpenSceneMode.Additive);
+
+            // PlayMode入場前にdirector.initialTimeを設定する。
+            // EnteredPlayMode後にdirector.timeでシークすると、CapFrameRateが
+            // 有効になる前の不定なdeltaTimeでTimelineが進んでしまい頭が早送りになる。
+            foreach (var director in Object.FindObjectsByType<PlayableDirector>(FindObjectsSortMode.None))
+            {
+                double fps = (director.playableAsset is TimelineAsset tl)
+                    ? tl.editorSettings.fps
+                    : config.settings.targetFPS;
+                director.initialTime = item.frameInterval.start / fps;
+                // playOnAwake=trueのままだとEnteredPlayMode発火までの間（≈数十フレーム）
+                // directorが自動再生して録画開始位置がズレるため、明示的にfalseにする
+                director.playOnAwake = false;
+            }
 
             // 録画開始はBatchRecordingSessionがEnteredPlayModeイベントで行う
             EditorApplication.EnterPlaymode();
