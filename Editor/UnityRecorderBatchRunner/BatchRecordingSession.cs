@@ -51,8 +51,9 @@ namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
         private static void StartRecording(RenderingItem item, RenderQueueSettings settings)
         {
             string outputFolder = PlayerPrefs.GetString("JayT_OutputPath", "");
+            string timestamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss");
             var movieSettings = ScriptableObject.CreateInstance<MovieRecorderSettings>();
-            movieSettings.OutputFile = Path.Combine(outputFolder, item.renderingId);
+            movieSettings.OutputFile = Path.Combine(outputFolder, $"{item.renderingId}_{timestamp}");
             movieSettings.name = item.renderingId;
 
             var cameraInput = new CameraInputSettings
@@ -71,7 +72,6 @@ namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
 
             movieSettings.ImageInputSettings = cameraInput;
             movieSettings.AudioInputSettings.PreserveAudio = settings.includeAudio;
-            movieSettings.FrameRate = settings.targetFPS;
 
             if (settings.encoder == "ProRes")
             {
@@ -99,6 +99,7 @@ namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
             var controllerSettings = ScriptableObject.CreateInstance<RecorderControllerSettings>();
             controllerSettings.AddRecorderSettings(movieSettings);
             controllerSettings.SetRecordModeToFrameInterval(item.frameInterval.start, item.frameInterval.end);
+            controllerSettings.FrameRate = settings.targetFPS;
             controllerSettings.CapFrameRate = settings.capFPS;
 
             _recorder = new RecorderController(controllerSettings);
