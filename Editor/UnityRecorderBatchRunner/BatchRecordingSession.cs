@@ -108,6 +108,8 @@ namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
             int durationFrames = item.frameInterval.end - item.frameInterval.start;
             controllerSettings.SetRecordModeToFrameInterval(0, durationFrames);
             controllerSettings.FrameRate = settings.targetFPS;
+            // 録画中は Time.deltaTime を 強制的に固定値 に置き換える
+            controllerSettings.FrameRatePlayback = FrameRatePlayback.Constant;
             controllerSettings.CapFrameRate = settings.capFPS;
 
             _recorder = new RecorderController(controllerSettings);
