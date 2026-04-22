@@ -26,7 +26,7 @@ namespace JayT.UnityProductionUrpHelper
     {
         static List<AnimationTrack> _cachedTracks = new();
         static float _cachedFrameRate = 60f;
-        static TimelineClip[] _lastKnownClips = new TimelineClip[] { };
+        static UnityEngine.Object[] _lastKnownSelection = new UnityEngine.Object[0];
 
         static AnimationClipExporterSelectionCache()
         {
@@ -35,23 +35,24 @@ namespace JayT.UnityProductionUrpHelper
 
         static void PollSelection()
         {
-            var current = TimelineEditor.selectedClips;
-            if (current == _lastKnownClips) return;
-            _lastKnownClips = current;
+            var current = Selection.objects;
+            if (current == _lastKnownSelection) return;
+            _lastKnownSelection = current;
 
             _cachedTracks = current
-                .Select(c => c.GetParentTrack())
-                .Distinct()
                 .OfType<AnimationTrack>()
                 .ToList();
 
-            if (_cachedTracks.Count > 0)
-                _cachedFrameRate = GenericOnlyAnimationClipExporter.GetFrameRate(_cachedTracks.First());
+            var asset = TimelineEditor.inspectedAsset;
+            if (asset != null)
+                _cachedFrameRate = (float)asset.editorSettings.frameRate;
+
+            foreach (var w in Resources.FindObjectsOfTypeAll<ExportRangeDialog>())
+                w.Repaint();
         }
 
         public static List<AnimationTrack> GetTracks() => _cachedTracks;
         public static float GetFrameRate() => _cachedFrameRate;
-        public static bool HasTracks() => _cachedTracks.Count > 0;
     }
 
     public static class GenericOnlyAnimationClipExporter
@@ -61,26 +62,8 @@ namespace JayT.UnityProductionUrpHelper
         [MenuItem("Tools/JayT/ProductionUrpHelper/Export Range as AnimationClip")]
         public static void ExportRange()
         {
-            if (TimelineEditor.inspectedDirector == null)
-            {
-                EditorUtility.DisplayDialog("Error", "PlayableDirectorが見つかりません。", "OK");
-                return;
-            }
-
-            var tracks = AnimationClipExporterSelectionCache.GetTracks();
-            if (tracks.Count == 0)
-            {
-                EditorUtility.DisplayDialog("Error", "AnimationTrack上のクリップを選択してから実行してください。", "OK");
-                return;
-            }
-
-            var dialog = EditorWindow.GetWindow<ExportRangeDialog>(false, "Export Range", true);
-            dialog.Initialize(tracks, AnimationClipExporterSelectionCache.GetFrameRate());
+            EditorWindow.GetWindow<ExportRangeDialog>(false, "Export Range", true);
         }
-
-        [MenuItem("Tools/JayT/ProductionUrpHelper/Export Range as AnimationClip", true)]
-        private static bool ExportRangeValidate() =>
-            TimelineEditor.inspectedDirector != null;
 
         internal static void ExecuteExport(List<AnimationTrack> tracks, int startFrame, int endFrame, float frameRate)
         {
@@ -256,25 +239,38 @@ namespace JayT.UnityProductionUrpHelper
     /// </summary>
     public class ExportRangeDialog : EditorWindow
     {
-        private List<AnimationTrack> _tracks;
-        private float _frameRate;
         private int _startFrame;
         private int _endFrame = 100;
 
-        internal void Initialize(List<AnimationTrack> tracks, float frameRate)
+        private void OnEnable()
         {
-            _tracks = tracks;
-            _frameRate = frameRate;
-            minSize = new Vector2(300, 140);
-            Show();
+            minSize = new Vector2(300, 200);
         }
 
         private void OnGUI()
         {
+            var tracks = AnimationClipExporterSelectionCache.GetTracks();
+            bool hasDirector = TimelineEditor.inspectedDirector != null;
+            bool hasTracks = tracks.Count > 0;
+
             EditorGUILayout.Space(8);
-            EditorGUILayout.LabelField("出力フレーム範囲を指定", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField($"フレームレート: {_frameRate} fps", EditorStyles.miniLabel);
-            EditorGUILayout.Space(4);
+            EditorGUILayout.LabelField("状態", EditorStyles.boldLabel);
+
+            using (new EditorGUI.DisabledScope(true))
+            {
+                EditorGUILayout.Toggle("Timeline を開いている", hasDirector);
+                EditorGUILayout.Toggle("AnimationTrack を選択中", hasTracks);
+            }
+
+            if (hasTracks)
+            {
+                EditorGUILayout.Space(2);
+                foreach (var t in tracks)
+                    EditorGUILayout.LabelField($"  • {t.name}  ({AnimationClipExporterSelectionCache.GetFrameRate()} fps)", EditorStyles.miniLabel);
+            }
+
+            EditorGUILayout.Space(8);
+            EditorGUILayout.LabelField("出力フレーム範囲", EditorStyles.boldLabel);
 
             _startFrame = EditorGUILayout.IntField("開始フレーム", _startFrame);
             _endFrame = EditorGUILayout.IntField("終了フレーム", _endFrame);
@@ -282,25 +278,19 @@ namespace JayT.UnityProductionUrpHelper
             if (_startFrame < 0) _startFrame = 0;
             if (_endFrame <= _startFrame) _endFrame = _startFrame + 1;
 
-            EditorGUILayout.Space(4);
-            EditorGUILayout.LabelField(
-                $"出力先: Assets/ExportedClips/",
-                EditorStyles.miniLabel
-            );
+            EditorGUILayout.Space(2);
+            EditorGUILayout.LabelField("出力先: Assets/ExportedClips/", EditorStyles.miniLabel);
 
             EditorGUILayout.Space(8);
 
-            using (new EditorGUI.DisabledScope(_endFrame <= _startFrame))
+            using (new EditorGUI.DisabledScope(!hasDirector || !hasTracks))
             {
                 if (GUILayout.Button("Export"))
                 {
-                    GenericOnlyAnimationClipExporter.ExecuteExport(_tracks, _startFrame, _endFrame, _frameRate);
+                    GenericOnlyAnimationClipExporter.ExecuteExport(
+                        tracks, _startFrame, _endFrame,
+                        AnimationClipExporterSelectionCache.GetFrameRate());
                 }
-            }
-
-            if (GUILayout.Button("Cancel"))
-            {
-                Close();
             }
         }
     }
