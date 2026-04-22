@@ -13,13 +13,13 @@ Timelineの標準機能では以下ができない：
 
 ## 要件
 
-- メニュー `Tools/JayT/ProductionUrpHelper/Export Range as AnimationClip` から実行できること
-- 実行時にダイアログで開始・終了フレームをフレーム単位で入力できること
+- メニュー `Tools/JayT/ProductionUrpHelper/Export Range as AnimationClip` からいつでもウィンドウを開けること
+- ウィンドウ内で開始・終了フレームをフレーム単位で入力できること
+- Timeline上の AnimationTrack を選択した状態で Export ボタンが有効になること（クリップの有無は問わない）
 - 指定フレーム範囲のアニメーションを1つの.animファイルとして出力すること
 - 出力先は `Assets/ExportedClips/` に固定（フォルダがなければ自動作成）
 - ファイル名は `トラック名_開始f_終了f.anim` の形式
 - 同名ファイルが存在する場合は自動で連番を付与すること
-- 主にEditorでの操作で完結すること（スクリプト記述は最小限）
 
 ## 実装方針
 
@@ -27,18 +27,29 @@ Timelineの標準機能では以下ができない：
 
 | クラス名 | 役割 |
 |---|---|
-| `GenericOnlyAnimationClipExporter` | `[MenuItem]` からの実行・出力処理本体 |
+| `AnimationClipExporterSelectionCache` | Timeline の選択状態をキャッシュする `[InitializeOnLoad]` クラス |
+| `GenericOnlyAnimationClipExporter` | メニュー登録・出力処理本体 |
 | `ExportRangeDialog` | フレーム範囲入力ウィンドウ（通常の EditorWindow。タブ統合・リサイズ可） |
 
 ### 処理フロー
 
-1. `[MenuItem("Tools/JayT/ProductionUrpHelper/Export Range as AnimationClip")]` でメニュー登録
-   - `PlayableDirector` が存在しない場合はグレーアウト（validate メソッドで制御）
-2. 選択クリップの親トラック（AnimationTrack）を取得
-3. `ExportRangeDialog` を開きフレーム範囲を入力
-4. 指定範囲とトラック上の各クリップの重複区間を計算
-5. `AnimationUtility.GetEditorCurve` で曲線を取得し時間オフセット付きでコピー
+1. `[MenuItem]` でメニューを登録。validate なし（常に開ける）
+2. ウィンドウを開く（`GetWindow` で既存ウィンドウを再利用）
+3. ウィンドウは `AnimationClipExporterSelectionCache` から現在の状態を読み取り表示
+   - Timeline を開いているか
+   - AnimationTrack を選択中か・選択中のトラック名
+4. Export ボタンは「Timeline が開いている」かつ「AnimationTrack を選択中」のときのみ有効
+5. Export 実行：指定範囲とトラック上の各クリップの重複区間を計算し曲線をコピー
 6. `AssetDatabase.CreateAsset` で.animとして保存
+
+### 選択キャッシュの仕組み
+
+`EditorApplication.update` で `Selection.objects` をポーリングし、`AnimationTrack` のみを抽出してキャッシュする。
+これにより、メニューを開いた際に Timeline ウィンドウがフォーカスを失っても選択状態が保持される。
+
+フレームレートは `TimelineEditor.inspectedAsset.editorSettings.frameRate` から取得する。
+
+選択が変化したタイミングで開いている `ExportRangeDialog` を `Repaint()` して表示を即時更新する。
 
 ### フレーム範囲とソースclipの時間変換
 
