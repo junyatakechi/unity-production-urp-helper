@@ -48,10 +48,26 @@ namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
 
             StartRecording(item, config.settings);
 
-            // RunNext()でplayOnAwake=falseに設定済みのため、ここで明示的にPlay()する。
-            // Recorder開始後にPlay()することで、initialTimeから録画が始まる。
+            // timelineシーンのdirectorのみ Play() する。
+            // サブタイムライン(ControlTrackで制御)のdirectorを独立にPlay()すると
+            // 親と競合してモーションが早送りになるため除外する。
+            if (config.settings.includeAudio)
+            {
+                int sr = AudioSettings.outputSampleRate;
+                if (sr != 44100 && sr != 48000)
+                    Debug.LogWarning($"[BatchRecordingSession] Audio sample rate is {sr} Hz. Recommend 44100 or 48000 for standard video output.");
+            }
+
+            string timelineSceneName = item.scene.timeline;
             foreach (var director in Object.FindObjectsByType<PlayableDirector>(FindObjectsSortMode.None))
+            {
+                if (director.gameObject.scene.name != timelineSceneName) continue;
+                // DSPClockはリアルタイム再生での音声同期用。オフラインレンダリングでは
+                // Recorderが制御するゲーム時間(Time.captureFramerate)と乖離し、
+                // 重いフレームでDSP時間がゲーム時間より進んでモーションが早送りになる。
+                director.timeUpdateMode = DirectorUpdateMode.GameTime;
                 director.Play();
+            }
         }
 
         private static void StartRecording(RenderingItem item, RenderQueueSettings settings)
@@ -105,12 +121,16 @@ namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
             var controllerSettings = ScriptableObject.CreateInstance<RecorderControllerSettings>();
             controllerSettings.AddRecorderSettings(movieSettings);
             // directorはinitialTimeからスタート済みのため、Recorderは0から(end-start)フレームを録画する
+            // SetRecordModeToFrameInterval の end は inclusive なので -1 して正確なフレーム数にする
             int durationFrames = item.frameInterval.end - item.frameInterval.start;
-            controllerSettings.SetRecordModeToFrameInterval(0, durationFrames);
+            controllerSettings.SetRecordModeToFrameInterval(0, durationFrames - 1);
             controllerSettings.FrameRate = settings.targetFPS;
             // 録画中は Time.deltaTime を 強制的に固定値 に置き換える
             controllerSettings.FrameRatePlayback = FrameRatePlayback.Constant;
-            controllerSettings.CapFrameRate = settings.capFPS;
+            // includeAudio=true の場合は必ず CapFrameRate=true にする。
+            // 音声はDSPクロック(実時間)で動くため、CapFrameRate=false で描画が実時間より
+            // 速く進むと映像と音声が大きくずれる。
+            controllerSettings.CapFrameRate = settings.includeAudio || settings.capFPS;
 
             _recorder = new RecorderController(controllerSettings);
             _recorder.PrepareRecording();

@@ -240,11 +240,15 @@ namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
             EditorSceneManager.OpenScene(mainPath, OpenSceneMode.Additive);
             EditorSceneManager.OpenScene(timelinePath, OpenSceneMode.Additive);
 
-            // PlayMode入場前にdirector.initialTimeを設定する。
-            // EnteredPlayMode後にdirector.timeでシークすると、CapFrameRateが
-            // 有効になる前の不定なdeltaTimeでTimelineが進んでしまい頭が早送りになる。
+            // timelineシーンのdirectorにのみ initialTime を設定する。
+            // サブタイムライン(ControlTrackで制御)のdirectorに設定すると
+            // 親と競合してモーションが早送りになるため除外する。
+            // PlayMode入場前に設定することで、EnteredPlayMode後の不定なdeltaTimeによる
+            // 頭の早送りを防ぐ。
+            string timelineSceneName = item.scene.timeline;
             foreach (var director in Object.FindObjectsByType<PlayableDirector>(FindObjectsSortMode.None))
             {
+                if (director.gameObject.scene.name != timelineSceneName) continue;
                 double fps = (director.playableAsset is TimelineAsset tl)
                     ? tl.editorSettings.fps
                     : config.settings.targetFPS;
