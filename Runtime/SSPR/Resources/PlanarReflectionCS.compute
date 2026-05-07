@@ -46,10 +46,6 @@ float3 ScreenIDToPosWS(uint2 id)
     float  rawDepth = _CameraDepthTexture.SampleLevel(PointClampSampler, uv, 0);
 
     float4 posCS = float4(uv * 2.0 - 1.0, rawDepth, 1.0);
-#if UNITY_UV_STARTS_AT_TOP
-    posCS.y = -posCS.y;
-#endif
-
     float4 posHWS = mul(_InvVPMatrix, posCS);
     return posHWS.xyz / posHWS.w;
 }
@@ -68,10 +64,7 @@ float2 ReflectedPosWSToScreenUV(float3 reflectedPosWS)
     float4 posCS = mul(_VPMatrix, float4(reflectedPosWS, 1.0));
     float2 ndc   = posCS.xy / posCS.w;
     float2 uv    = ndc * 0.5 + 0.5;
-
-#if UNITY_UV_STARTS_AT_TOP
     uv.y = 1.0 - uv.y;
-#endif
     return uv;
 }
 
@@ -90,7 +83,7 @@ half FadeAlpha(float2 screenUV, float reflectedY)
 [numthreads(NUMTHREAD_X, NUMTHREAD_Y, 1)]
 void Clear(uint3 id : SV_DispatchThreadID)
 {
-    ColorRT[id.xy] = half4(0, 1, 1, 1); // DEBUG cyan
+    ColorRT[id.xy] = half4(0, 0, 0, 0);
     HashRT[id.xy]  = MAX_UINT;
 }
 
@@ -105,14 +98,13 @@ void RenderHashRT(uint3 id : SV_DispatchThreadID)
 {
     float3 posWS = ScreenIDToPosWS(id.xy);
 
-    // 反射面より下は無効
+    // DEBUG: 3色でフェーズを可視化
     if (posWS.y <= _PlaneHeightWS)
         return;
 
     float3 reflectedPosWS = MirrorPosWS(posWS);
     float2 reflectedUV    = ReflectedPosWSToScreenUV(reflectedPosWS);
 
-    // UV 範囲外は早期 return
     float2 border = abs(reflectedUV - 0.5);
     if (border.x >= 0.5 || border.y >= 0.5)
         return;
@@ -123,7 +115,6 @@ void RenderHashRT(uint3 id : SV_DispatchThreadID)
     half   alpha     = FadeAlpha(srcUV, reflectedPosWS.y);
     uint   alphaInt  = (uint)(alpha * 255.0);
 
-    // hash: y が小さいほど反射面に近い → InterlockedMin で正しく競合解決
     uint hash = (id.y << 20) | (id.x << 8) | alphaInt;
     InterlockedMin(HashRT[reflectedID], hash);
 }

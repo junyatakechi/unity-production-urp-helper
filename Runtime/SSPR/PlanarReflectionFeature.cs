@@ -33,7 +33,6 @@ namespace JayT.UnityProductionUrpHelper
 
         public override void Create()
         {
-            Debug.Log("[SSPR] Create called");
             _pass = new PlanarReflectionPass(PassSettings);
             _pass.renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
             Shader.SetGlobalTexture("_PlanarReflection_ColorRT", Texture2D.blackTexture);
@@ -41,7 +40,6 @@ namespace JayT.UnityProductionUrpHelper
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            Debug.Log($"[SSPR] AddRenderPasses: cameraType={renderingData.cameraData.cameraType}, pass={_pass != null}");
             if (renderingData.cameraData.cameraType == CameraType.Preview)
                 return;
 

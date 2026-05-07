@@ -103,7 +103,6 @@ namespace JayT.UnityProductionUrpHelper
 
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
-            Debug.Log($"[SSPR] Execute: cs={_cs != null}, colorRT={_colorRT != null}, size={_currentWidth}x{_currentHeight}");
             if (_cs == null || _colorRT == null) return;
 
             int w = _currentWidth;
@@ -112,7 +111,7 @@ namespace JayT.UnityProductionUrpHelper
             int groupY = h / THREAD_Y;
 
             Camera cam = renderingData.cameraData.camera;
-            Matrix4x4 vp    = GL.GetGPUProjectionMatrix(cam.projectionMatrix, false) * cam.worldToCameraMatrix;
+            Matrix4x4 vp    = GL.GetGPUProjectionMatrix(cam.projectionMatrix, true) * cam.worldToCameraMatrix;
             Matrix4x4 invVP = vp.inverse;
 
             var cmd = CommandBufferPool.Get("PlanarReflection");
@@ -126,13 +125,33 @@ namespace JayT.UnityProductionUrpHelper
             cmd.SetComputeMatrixParam(_cs,  _VPMatrix_ID,       vp);
             cmd.SetComputeMatrixParam(_cs,  _InvVPMatrix_ID,    invVP);
 
-            // Step1: Clear (DEBUG: cyan fill)
+            var depthTex  = Shader.GetGlobalTexture("_CameraDepthTexture");
+            var opaqueTex = Shader.GetGlobalTexture("_CameraOpaqueTexture");
+            if (depthTex == null || opaqueTex == null) return;
+
+            // Step1: Clear
             cmd.SetComputeTextureParam(_cs, _kernelClear, "ColorRT", _colorRT);
             cmd.SetComputeTextureParam(_cs, _kernelClear, "HashRT",  _hashRT);
             cmd.DispatchCompute(_cs, _kernelClear, groupX, groupY, 1);
 
-            // DEBUG: skip steps 2-4 to verify clear→shader pipeline
-            // Step2-4 commented out temporarily
+            // Step2: 深度→反射ハッシュ
+            cmd.SetComputeTextureParam(_cs, _kernelHash, "ColorRT",              _colorRT);
+            cmd.SetComputeTextureParam(_cs, _kernelHash, "HashRT",               _hashRT);
+            cmd.SetComputeTextureParam(_cs, _kernelHash, "_CameraDepthTexture",  depthTex);
+            cmd.DispatchCompute(_cs, _kernelHash, groupX, groupY, 1);
+
+            // Step3: ハッシュ→カラー
+            cmd.SetComputeTextureParam(_cs, _kernelResolve, "ColorRT",              _colorRT);
+            cmd.SetComputeTextureParam(_cs, _kernelResolve, "HashRT",               _hashRT);
+            cmd.SetComputeTextureParam(_cs, _kernelResolve, "_CameraOpaqueTexture", opaqueTex);
+            cmd.DispatchCompute(_cs, _kernelResolve, groupX, groupY, 1);
+
+            // Step4: 穴埋め
+            cmd.SetComputeTextureParam(_cs, _kernelFill, "ColorRT", _colorRT);
+            cmd.SetComputeTextureParam(_cs, _kernelFill, "HashRT",  _hashRT);
+            cmd.DispatchCompute(_cs, _kernelFill,
+                Mathf.CeilToInt(groupX / 2f),
+                Mathf.CeilToInt(groupY / 2f), 1);
 
             context.ExecuteCommandBuffer(cmd);
             CommandBufferPool.Release(cmd);
