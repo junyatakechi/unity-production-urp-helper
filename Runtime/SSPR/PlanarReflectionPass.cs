@@ -140,14 +140,6 @@ namespace JayT.UnityProductionUrpHelper
 
             context.ExecuteCommandBuffer(cmd);
             CommandBufferPool.Release(cmd);
-
-            // ---- 床オブジェクトを LightMode="PlanarReflection" で描画 ----
-            var drawSettings = CreateDrawingSettings(
-                new ShaderTagId("PlanarReflection"),
-                ref renderingData,
-                SortingCriteria.CommonOpaque);
-            var filterSettings = new FilteringSettings(RenderQueueRange.all);
-            context.DrawRenderers(renderingData.cullResults, ref drawSettings, ref filterSettings);
         }
 
         // ---- Cleanup ----

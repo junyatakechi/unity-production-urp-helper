@@ -34,8 +34,8 @@ namespace JayT.UnityProductionUrpHelper
         public override void Create()
         {
             _pass = new PlanarReflectionPass(PassSettings);
-            // OpaqueTexture と DepthTexture が確定した後に実行
-            _pass.renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
+            // OpaqueTexture コピー後・透明パス前に実行
+            _pass.renderPassEvent = RenderPassEvent.BeforeRenderingTransparents;
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)

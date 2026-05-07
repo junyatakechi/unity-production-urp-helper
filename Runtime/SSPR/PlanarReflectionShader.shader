@@ -13,12 +13,13 @@ Shader "JayT/PlanarReflectionFloor"
 
     SubShader
     {
-        Tags { "RenderType"="Opaque" "RenderPipeline"="UniversalPipeline" }
+        Tags { "RenderType"="Opaque" "Queue"="Transparent" "RenderPipeline"="UniversalPipeline" }
 
         Pass
         {
-            // RendererFeature 側の DrawRenderers が拾うための LightMode
-            Tags { "LightMode"="PlanarReflection" }
+            Tags { "LightMode"="UniversalForward" }
+            ZWrite On
+            ZTest LEqual
 
             HLSLPROGRAM
             #pragma vertex   vert
@@ -31,7 +32,6 @@ Shader "JayT/PlanarReflectionFloor"
 
             // ---- Reflection RT (RendererFeature が SetGlobalTexture で渡す) ----
             TEXTURE2D(_PlanarReflection_ColorRT);
-            SAMPLER(sampler_LinearClamp);
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
@@ -91,7 +91,7 @@ Shader "JayT/PlanarReflectionFloor"
 
                 // ---- フォールバック: リフレクションプローブ ----
                 float3 reflectDirWS    = reflect(-viewWS, IN.normalWS) * float3(1, -1, 1);
-                half3  probeReflection = GlossyEnvironmentReflection(half3(reflectDirWS), _Roughness, 1.0h);
+                half3  probeReflection = GlossyEnvironmentReflection(half3(reflectDirWS), IN.posWS, _Roughness, 1.0h);
 
                 // ---- 合成: Probe → SSPR の順で lerp ----
                 half3 reflection = lerp(probeReflection, reflectionSample.rgb, reflectionSample.a);
