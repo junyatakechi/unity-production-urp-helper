@@ -1,0 +1,182 @@
+// PlanarReflectionCS.compute
+// PC (DirectX11/12) 専用 Planar Reflection Compute Shader
+// Assets/Resources/PlanarReflectionCS.compute に配置
+
+#pragma kernel Clear
+#pragma kernel RenderHashRT
+#pragma kernel ResolveColorRT
+#pragma kernel FillHoles
+
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+// ---- numthreads ----
+#define NUMTHREAD_X 8
+#define NUMTHREAD_Y 8
+#define MAX_UINT    4294967295u
+
+// ---- Uniform ----
+float2   _RTSize;
+float    _PlaneHeightWS;
+float    _FadeOutVertical;
+float    _FadeOutHorizontal;
+float4   _TintColor;
+float3   _CameraDirection;
+float4x4 _VPMatrix;
+
+// ---- RW Textures ----
+RWTexture2D<half4> ColorRT;
+RWTexture2D<uint>  HashRT;
+
+// ---- Read Textures ----
+Texture2D<float>  _CameraDepthTexture;
+Texture2D<half4>  _CameraOpaqueTexture;
+
+SamplerState PointClampSampler;
+SamplerState LinearClampSampler;
+
+// =========================================================
+// 共通関数
+// =========================================================
+
+/// スクリーン ID から ワールド座標を復元
+float3 ScreenIDToPosWS(uint2 id)
+{
+    float2 uv = float2(id.x / _RTSize.x, id.y / _RTSize.y);
+    float  rawDepth = _CameraDepthTexture.SampleLevel(PointClampSampler, uv, 0);
+
+    float4 posCS = float4(uv * 2.0 - 1.0, rawDepth, 1.0);
+#if UNITY_UV_STARTS_AT_TOP
+    posCS.y = -posCS.y;
+#endif
+
+    float4 posHWS = mul(UNITY_MATRIX_I_VP, posCS);
+    return posHWS.xyz / posHWS.w;
+}
+
+/// 水平反射面に対して Y 軸ミラー
+float3 MirrorPosWS(float3 posWS)
+{
+    float3 r = posWS;
+    r.y = _PlaneHeightWS + (_PlaneHeightWS - posWS.y); // 2h - y
+    return r;
+}
+
+/// 反射後ワールド座標をスクリーン UV に変換
+float2 ReflectedPosWSToScreenUV(float3 reflectedPosWS)
+{
+    float4 posCS = mul(_VPMatrix, float4(reflectedPosWS, 1.0));
+    float2 ndc   = posCS.xy / posCS.w;
+    float2 uv    = ndc * 0.5 + 0.5;
+
+#if UNITY_UV_STARTS_AT_TOP
+    uv.y = 1.0 - uv.y;
+#endif
+    return uv;
+}
+
+/// 画面端フェードアウト係数 (0〜1)
+half FadeAlpha(float2 screenUV, float reflectedY)
+{
+    half fadeV = smoothstep(1.0, 1.0 - _FadeOutVertical, screenUV.y);
+    half fadeH = smoothstep(1.0, 1.0 - _FadeOutHorizontal * -(reflectedY - _PlaneHeightWS),
+                             abs(screenUV.x * 2.0 - 1.0));
+    return fadeV * fadeH;
+}
+
+// =========================================================
+// Kernel: Clear
+// =========================================================
+[numthreads(NUMTHREAD_X, NUMTHREAD_Y, 1)]
+void Clear(uint3 id : SV_DispatchThreadID)
+{
+    ColorRT[id.xy] = half4(0, 0, 0, 0);
+    HashRT[id.xy]  = MAX_UINT; // InterlockedMin のクリア値（最大値）
+}
+
+// =========================================================
+// Kernel: RenderHashRT
+// 各ピクセルの反射先スクリーン位置に hash を書き込む
+// hash = [ 12bit: id.y | 12bit: id.x | 8bit: alpha ]
+// InterlockedMin で「反射面に最も近いピクセル」が勝つ
+// =========================================================
+[numthreads(NUMTHREAD_X, NUMTHREAD_Y, 1)]
+void RenderHashRT(uint3 id : SV_DispatchThreadID)
+{
+    float3 posWS = ScreenIDToPosWS(id.xy);
+
+    // 反射面より下は無効
+    if (posWS.y <= _PlaneHeightWS)
+        return;
+
+    float3 reflectedPosWS = MirrorPosWS(posWS);
+    float2 reflectedUV    = ReflectedPosWSToScreenUV(reflectedPosWS);
+
+    // UV 範囲外は早期 return
+    float2 border = abs(reflectedUV - 0.5);
+    if (border.x >= 0.5 || border.y >= 0.5)
+        return;
+
+    uint2 reflectedID = (uint2)(reflectedUV * _RTSize);
+
+    float2 srcUV     = id.xy / _RTSize;
+    half   alpha     = FadeAlpha(srcUV, reflectedPosWS.y);
+    uint   alphaInt  = (uint)(alpha * 255.0);
+
+    // hash: y が小さいほど反射面に近い → InterlockedMin で正しく競合解決
+    uint hash = (id.y << 20) | (id.x << 8) | alphaInt;
+    InterlockedMin(HashRT[reflectedID], hash);
+}
+
+// =========================================================
+// Kernel: ResolveColorRT
+// HashRT から元スクリーン位置を復元して色を書き込む
+// =========================================================
+[numthreads(NUMTHREAD_X, NUMTHREAD_Y, 1)]
+void ResolveColorRT(uint3 id : SV_DispatchThreadID)
+{
+    uint packed = HashRT[id.xy];
+    if (packed == MAX_UINT)
+    {
+        ColorRT[id.xy] = half4(0, 0, 0, 0);
+        return;
+    }
+
+    // hash デコード
+    uint2 srcID    = uint2((packed >> 8) & 0xFFF, packed >> 20);
+    uint  alphaInt = packed & 0xFF;
+    half  alpha    = alphaInt / 255.0h;
+
+    float2 srcUV     = srcID / _RTSize;
+    half3  color     = _CameraOpaqueTexture.SampleLevel(LinearClampSampler, srcUV, 0).rgb;
+
+    half4 result = half4(color, alpha) * half4(_TintColor.rgb, _TintColor.a);
+    result.a     = saturate(result.a);
+
+    ColorRT[id.xy] = result;
+}
+
+// =========================================================
+// Kernel: FillHoles
+// 2×2 ブロック内で alpha の高いピクセルを隣に伝播
+// =========================================================
+[numthreads(NUMTHREAD_X, NUMTHREAD_Y, 1)]
+void FillHoles(uint3 id : SV_DispatchThreadID)
+{
+    uint2 base = id.xy * 2;
+
+    half4 c00 = ColorRT[base + uint2(0, 0)];
+    half4 c10 = ColorRT[base + uint2(1, 0)];
+    half4 c01 = ColorRT[base + uint2(0, 1)];
+    half4 c11 = ColorRT[base + uint2(1, 1)];
+
+    // alpha が最も高いピクセルを選ぶ
+    half4 best = c00;
+    if (c10.a > best.a + 0.5h) best = c10;
+    if (c01.a > best.a + 0.5h) best = c01;
+    if (c11.a > best.a + 0.5h) best = c11;
+
+    ColorRT[base + uint2(0, 0)] = (best.a > c00.a + 0.5h) ? best : c00;
+    ColorRT[base + uint2(1, 0)] = (best.a > c10.a + 0.5h) ? best : c10;
+    ColorRT[base + uint2(0, 1)] = (best.a > c01.a + 0.5h) ? best : c01;
+    ColorRT[base + uint2(1, 1)] = (best.a > c11.a + 0.5h) ? best : c11;
+}
