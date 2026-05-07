@@ -45,6 +45,8 @@ namespace JayT.UnityProductionUrpHelper
             _cs = Resources.Load<ComputeShader>("PlanarReflectionCS");
             if (_cs == null)
                 Debug.LogError("[PlanarReflectionPass] ComputeShader 'PlanarReflectionCS' not found in Resources.");
+
+            ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color);
         }
 
         int GetRTHeight() =>
@@ -124,30 +126,13 @@ namespace JayT.UnityProductionUrpHelper
             cmd.SetComputeMatrixParam(_cs,  _VPMatrix_ID,       vp);
             cmd.SetComputeMatrixParam(_cs,  _InvVPMatrix_ID,    invVP);
 
-            // Step1: Clear
+            // Step1: Clear (DEBUG: cyan fill)
             cmd.SetComputeTextureParam(_cs, _kernelClear, "ColorRT", _colorRT);
             cmd.SetComputeTextureParam(_cs, _kernelClear, "HashRT",  _hashRT);
             cmd.DispatchCompute(_cs, _kernelClear, groupX, groupY, 1);
 
-            // Step2: 深度→反射ハッシュ
-            cmd.SetComputeTextureParam(_cs, _kernelHash, "HashRT", _hashRT);
-            cmd.SetComputeTextureParam(_cs, _kernelHash, "_CameraDepthTexture",
-                new RenderTargetIdentifier("_CameraDepthTexture"));
-            cmd.DispatchCompute(_cs, _kernelHash, groupX, groupY, 1);
-
-            // Step3: ハッシュ→カラー
-            cmd.SetComputeTextureParam(_cs, _kernelResolve, "ColorRT", _colorRT);
-            cmd.SetComputeTextureParam(_cs, _kernelResolve, "HashRT",  _hashRT);
-            cmd.SetComputeTextureParam(_cs, _kernelResolve, "_CameraOpaqueTexture",
-                new RenderTargetIdentifier("_CameraOpaqueTexture"));
-            cmd.DispatchCompute(_cs, _kernelResolve, groupX, groupY, 1);
-
-            // Step4: 穴埋め
-            cmd.SetComputeTextureParam(_cs, _kernelFill, "ColorRT", _colorRT);
-            cmd.SetComputeTextureParam(_cs, _kernelFill, "HashRT",  _hashRT);
-            cmd.DispatchCompute(_cs, _kernelFill,
-                Mathf.CeilToInt(groupX / 2f),
-                Mathf.CeilToInt(groupY / 2f), 1);
+            // DEBUG: skip steps 2-4 to verify clear→shader pipeline
+            // Step2-4 commented out temporarily
 
             context.ExecuteCommandBuffer(cmd);
             CommandBufferPool.Release(cmd);
