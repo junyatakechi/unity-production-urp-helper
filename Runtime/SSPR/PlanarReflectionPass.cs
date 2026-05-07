@@ -15,9 +15,9 @@ namespace JayT.UnityProductionUrpHelper
         static readonly int _FadeHorizontal_ID = Shader.PropertyToID("_FadeOutHorizontal");
         static readonly int _TintColor_ID      = Shader.PropertyToID("_TintColor");
         static readonly int _VPMatrix_ID       = Shader.PropertyToID("_VPMatrix");
+        static readonly int _InvVPMatrix_ID    = Shader.PropertyToID("_InvVPMatrix");
         static readonly int _CameraDir_ID      = Shader.PropertyToID("_CameraDirection");
 
-        // Compute Shader Kernel 名
         const string KERNEL_CLEAR   = "Clear";
         const string KERNEL_HASH    = "RenderHashRT";
         const string KERNEL_RESOLVE = "ResolveColorRT";
@@ -26,7 +26,6 @@ namespace JayT.UnityProductionUrpHelper
         const int THREAD_X = 8;
         const int THREAD_Y = 8;
 
-        // ---- Fields ----
         readonly PlanarReflectionFeature.Settings _settings;
         ComputeShader _cs;
 
@@ -35,17 +34,19 @@ namespace JayT.UnityProductionUrpHelper
         int _kernelResolve;
         int _kernelFill;
 
-        RenderTargetIdentifier _colorRTI;
-        RenderTargetIdentifier _hashRTI;
+        RenderTexture _colorRT;
+        RenderTexture _hashRT;
+        int _currentWidth;
+        int _currentHeight;
 
-        // ---- Constructor ----
         public PlanarReflectionPass(PlanarReflectionFeature.Settings settings)
         {
             _settings = settings;
             _cs = Resources.Load<ComputeShader>("PlanarReflectionCS");
+            if (_cs == null)
+                Debug.LogError("[PlanarReflectionPass] ComputeShader 'PlanarReflectionCS' not found in Resources.");
         }
 
-        // ---- RT サイズ計算 ----
         int GetRTHeight() =>
             Mathf.CeilToInt(_settings.RTHeight / (float)THREAD_Y) * THREAD_Y;
 
@@ -55,54 +56,65 @@ namespace JayT.UnityProductionUrpHelper
             return Mathf.CeilToInt(GetRTHeight() * aspect / (float)THREAD_X) * THREAD_X;
         }
 
-        // ---- Configure: 一時 RT を確保 ----
+        void EnsureRTs(int w, int h)
+        {
+            if (_colorRT != null && _currentWidth == w && _currentHeight == h)
+                return;
+
+            CleanupRTs();
+
+            _colorRT = new RenderTexture(w, h, 0,
+                _settings.UseHDR ? RenderTextureFormat.ARGBHalf : RenderTextureFormat.ARGB32);
+            _colorRT.enableRandomWrite = true;
+            _colorRT.filterMode = FilterMode.Bilinear;
+            _colorRT.name = "_PlanarReflection_ColorRT";
+            _colorRT.Create();
+
+            _hashRT = new RenderTexture(w, h, 0, RenderTextureFormat.RInt);
+            _hashRT.enableRandomWrite = true;
+            _hashRT.name = "_PlanarReflection_HashRT";
+            _hashRT.Create();
+
+            _currentWidth  = w;
+            _currentHeight = h;
+
+            Shader.SetGlobalTexture(_ColorRT_ID, _colorRT);
+        }
+
+        public void CleanupRTs()
+        {
+            if (_colorRT != null) { _colorRT.Release(); _colorRT = null; }
+            if (_hashRT  != null) { _hashRT.Release();  _hashRT  = null; }
+        }
+
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
         {
-            if (_cs == null)
-            {
-                Debug.LogError("[PlanarReflectionPass] ComputeShader 'PlanarReflectionCS' not found in Resources.");
-                return;
-            }
+            if (_cs == null) return;
 
             _kernelClear   = _cs.FindKernel(KERNEL_CLEAR);
             _kernelHash    = _cs.FindKernel(KERNEL_HASH);
             _kernelResolve = _cs.FindKernel(KERNEL_RESOLVE);
             _kernelFill    = _cs.FindKernel(KERNEL_FILL);
 
-            int w = GetRTWidth();
-            int h = GetRTHeight();
-
-            // Color RT: ARGBHalf (HDR) or ARGB32
-            var colorDesc = new RenderTextureDescriptor(w, h, _settings.UseHDR ? RenderTextureFormat.ARGBHalf : RenderTextureFormat.ARGB32, 0, 0);
-            colorDesc.sRGB = false;
-            colorDesc.enableRandomWrite = true;
-            cmd.GetTemporaryRT(_ColorRT_ID, colorDesc);
-            _colorRTI = new RenderTargetIdentifier(_ColorRT_ID);
-
-            // Hash RT: RInt (PC専用, InterlockedMin に使う)
-            var hashDesc = new RenderTextureDescriptor(w, h, RenderTextureFormat.RInt, 0, 0);
-            hashDesc.sRGB = false;
-            hashDesc.enableRandomWrite = true;
-            cmd.GetTemporaryRT(_HashRT_ID, hashDesc);
-            _hashRTI = new RenderTargetIdentifier(_HashRT_ID);
+            EnsureRTs(GetRTWidth(), GetRTHeight());
         }
 
-        // ---- Execute: Compute Dispatch ----
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
-            if (_cs == null) return;
+            Debug.Log($"[SSPR] Execute: cs={_cs != null}, colorRT={_colorRT != null}, size={_currentWidth}x{_currentHeight}");
+            if (_cs == null || _colorRT == null) return;
 
-            var cmd = CommandBufferPool.Get("PlanarReflection");
-
-            int w = GetRTWidth();
-            int h = GetRTHeight();
+            int w = _currentWidth;
+            int h = _currentHeight;
             int groupX = w / THREAD_X;
             int groupY = h / THREAD_Y;
 
             Camera cam = renderingData.cameraData.camera;
-            Matrix4x4 vp = GL.GetGPUProjectionMatrix(cam.projectionMatrix, true) * cam.worldToCameraMatrix;
+            Matrix4x4 vp    = GL.GetGPUProjectionMatrix(cam.projectionMatrix, false) * cam.worldToCameraMatrix;
+            Matrix4x4 invVP = vp.inverse;
 
-            // ---- 共通パラメータ ----
+            var cmd = CommandBufferPool.Get("PlanarReflection");
+
             cmd.SetComputeVectorParam(_cs,  _RTSize_ID,         new Vector2(w, h));
             cmd.SetComputeFloatParam(_cs,   _PlaneHeightWS_ID,  _settings.PlaneHeightWS);
             cmd.SetComputeFloatParam(_cs,   _FadeVertical_ID,   _settings.FadeOutVertical);
@@ -110,44 +122,40 @@ namespace JayT.UnityProductionUrpHelper
             cmd.SetComputeVectorParam(_cs,  _TintColor_ID,      _settings.TintColor);
             cmd.SetComputeVectorParam(_cs,  _CameraDir_ID,      cam.transform.forward);
             cmd.SetComputeMatrixParam(_cs,  _VPMatrix_ID,       vp);
+            cmd.SetComputeMatrixParam(_cs,  _InvVPMatrix_ID,    invVP);
 
-            // ---- Step1: Clear ----
-            cmd.SetComputeTextureParam(_cs, _kernelClear, "ColorRT", _colorRTI);
-            cmd.SetComputeTextureParam(_cs, _kernelClear, "HashRT",  _hashRTI);
+            // Step1: Clear
+            cmd.SetComputeTextureParam(_cs, _kernelClear, "ColorRT", _colorRT);
+            cmd.SetComputeTextureParam(_cs, _kernelClear, "HashRT",  _hashRT);
             cmd.DispatchCompute(_cs, _kernelClear, groupX, groupY, 1);
 
-            // ---- Step2: 深度から反射先スクリーン位置をハッシュに書き込む ----
-            cmd.SetComputeTextureParam(_cs, _kernelHash, "HashRT",             _hashRTI);
-            cmd.SetComputeTextureParam(_cs, _kernelHash, "_CameraDepthTexture", new RenderTargetIdentifier("_CameraDepthTexture"));
+            // Step2: 深度→反射ハッシュ
+            cmd.SetComputeTextureParam(_cs, _kernelHash, "HashRT", _hashRT);
+            cmd.SetComputeTextureParam(_cs, _kernelHash, "_CameraDepthTexture",
+                new RenderTargetIdentifier("_CameraDepthTexture"));
             cmd.DispatchCompute(_cs, _kernelHash, groupX, groupY, 1);
 
-            // ---- Step3: ハッシュを解決して ColorRT に色を書き込む ----
-            cmd.SetComputeTextureParam(_cs, _kernelResolve, "ColorRT",              _colorRTI);
-            cmd.SetComputeTextureParam(_cs, _kernelResolve, "HashRT",               _hashRTI);
-            cmd.SetComputeTextureParam(_cs, _kernelResolve, "_CameraOpaqueTexture", new RenderTargetIdentifier("_CameraOpaqueTexture"));
+            // Step3: ハッシュ→カラー
+            cmd.SetComputeTextureParam(_cs, _kernelResolve, "ColorRT", _colorRT);
+            cmd.SetComputeTextureParam(_cs, _kernelResolve, "HashRT",  _hashRT);
+            cmd.SetComputeTextureParam(_cs, _kernelResolve, "_CameraOpaqueTexture",
+                new RenderTargetIdentifier("_CameraOpaqueTexture"));
             cmd.DispatchCompute(_cs, _kernelResolve, groupX, groupY, 1);
 
-            // ---- Step4: 穴埋め ----
-            cmd.SetComputeTextureParam(_cs, _kernelFill, "ColorRT", _colorRTI);
-            cmd.SetComputeTextureParam(_cs, _kernelFill, "HashRT",  _hashRTI);
+            // Step4: 穴埋め
+            cmd.SetComputeTextureParam(_cs, _kernelFill, "ColorRT", _colorRT);
+            cmd.SetComputeTextureParam(_cs, _kernelFill, "HashRT",  _hashRT);
             cmd.DispatchCompute(_cs, _kernelFill,
                 Mathf.CeilToInt(groupX / 2f),
                 Mathf.CeilToInt(groupY / 2f), 1);
 
-            // ---- グローバルテクスチャとしてシェーダーに渡す ----
-            cmd.SetGlobalTexture(_ColorRT_ID, _colorRTI);
-            cmd.EnableShaderKeyword("_PLANAR_REFLECTION_ON");
-
             context.ExecuteCommandBuffer(cmd);
             CommandBufferPool.Release(cmd);
+
+            // 次フレームに向けてグローバルテクスチャを更新（CPU側即時反映）
+            Shader.SetGlobalTexture(_ColorRT_ID, _colorRT);
         }
 
-        // ---- Cleanup ----
-        public override void FrameCleanup(CommandBuffer cmd)
-        {
-            cmd.ReleaseTemporaryRT(_ColorRT_ID);
-            cmd.ReleaseTemporaryRT(_HashRT_ID);
-            cmd.DisableShaderKeyword("_PLANAR_REFLECTION_ON");
-        }
+        public override void FrameCleanup(CommandBuffer cmd) { }
     }
 }

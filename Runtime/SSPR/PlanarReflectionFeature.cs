@@ -33,18 +33,24 @@ namespace JayT.UnityProductionUrpHelper
 
         public override void Create()
         {
+            Debug.Log("[SSPR] Create called");
             _pass = new PlanarReflectionPass(PassSettings);
-            // OpaqueTexture コピー後・透明パス前に実行
-            _pass.renderPassEvent = RenderPassEvent.BeforeRenderingTransparents;
+            _pass.renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
+            Shader.SetGlobalTexture("_PlanarReflection_ColorRT", Texture2D.blackTexture);
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            // SceneView では反射を省略
+            Debug.Log($"[SSPR] AddRenderPasses: cameraType={renderingData.cameraData.cameraType}, pass={_pass != null}");
             if (renderingData.cameraData.cameraType == CameraType.Preview)
                 return;
 
             renderer.EnqueuePass(_pass);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            _pass?.CleanupRTs();
         }
     }
 }

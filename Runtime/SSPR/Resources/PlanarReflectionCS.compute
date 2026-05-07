@@ -22,6 +22,7 @@ float    _FadeOutHorizontal;
 float4   _TintColor;
 float3   _CameraDirection;
 float4x4 _VPMatrix;
+float4x4 _InvVPMatrix;
 
 // ---- RW Textures ----
 RWTexture2D<half4> ColorRT;
@@ -49,7 +50,7 @@ float3 ScreenIDToPosWS(uint2 id)
     posCS.y = -posCS.y;
 #endif
 
-    float4 posHWS = mul(UNITY_MATRIX_I_VP, posCS);
+    float4 posHWS = mul(_InvVPMatrix, posCS);
     return posHWS.xyz / posHWS.w;
 }
 
@@ -89,8 +90,8 @@ half FadeAlpha(float2 screenUV, float reflectedY)
 [numthreads(NUMTHREAD_X, NUMTHREAD_Y, 1)]
 void Clear(uint3 id : SV_DispatchThreadID)
 {
-    ColorRT[id.xy] = half4(0, 0, 0, 0);
-    HashRT[id.xy]  = MAX_UINT; // InterlockedMin のクリア値（最大値）
+    ColorRT[id.xy] = half4(0, 1, 1, 1); // DEBUG cyan
+    HashRT[id.xy]  = MAX_UINT;
 }
 
 // =========================================================

@@ -25,8 +25,6 @@ Shader "JayT/PlanarReflectionFloor"
             #pragma vertex   vert
             #pragma fragment frag
 
-            #pragma multi_compile _ _PLANAR_REFLECTION_ON
-
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
@@ -78,11 +76,8 @@ Shader "JayT/PlanarReflectionFloor"
                 // ---- 反射 ----
                 half2 screenUV = IN.screenPos.xy / IN.screenPos.w;
 
-#if _PLANAR_REFLECTION_ON
                 half4 reflectionSample = SAMPLE_TEXTURE2D(_PlanarReflection_ColorRT, sampler_LinearClamp, screenUV);
-#else
-                half4 reflectionSample = half4(0, 0, 0, 0);
-#endif
+                return half4(reflectionSample.rgb, 1); // DEBUG: RTの内容を直接出力
 
                 // ---- Fresnel（反射強度を視線角度で調整） ----
                 float3 viewWS   = normalize(_WorldSpaceCameraPos - IN.posWS);
