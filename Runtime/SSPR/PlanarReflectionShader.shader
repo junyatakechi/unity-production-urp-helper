@@ -77,7 +77,6 @@ Shader "JayT/PlanarReflectionFloor"
                 half2 screenUV = IN.screenPos.xy / IN.screenPos.w;
 
                 half4 reflectionSample = SAMPLE_TEXTURE2D(_PlanarReflection_ColorRT, sampler_LinearClamp, screenUV);
-                return half4(reflectionSample.rgb, 1); // DEBUG: RTの内容を直接出力
 
                 // ---- Fresnel（反射強度を視線角度で調整） ----
                 float3 viewWS   = normalize(_WorldSpaceCameraPos - IN.posWS);
