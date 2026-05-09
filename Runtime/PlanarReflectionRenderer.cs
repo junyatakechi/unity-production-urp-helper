@@ -53,7 +53,6 @@ private void UpdateReflectionCamera()
     reflectPos.y = 2f * floorY - mainPos.y;
     _reflectionCamera.transform.position = reflectPos;
 
-    // 反射ベクトルで正確な向きを算出
     Vector3 normal = Vector3.up;
     Vector3 reflectedForward = Vector3.Reflect(_mainCamera.transform.forward, normal);
     Vector3 reflectedUp = Vector3.Reflect(_mainCamera.transform.up, normal);
@@ -62,6 +61,7 @@ private void UpdateReflectionCamera()
     _reflectionCamera.fieldOfView = _mainCamera.fieldOfView;
     _reflectionCamera.nearClipPlane = _mainCamera.nearClipPlane;
     _reflectionCamera.farClipPlane = _mainCamera.farClipPlane;
+    _reflectionCamera.aspect = _mainCamera.aspect;
 }
 
         private void RenderReflection()
