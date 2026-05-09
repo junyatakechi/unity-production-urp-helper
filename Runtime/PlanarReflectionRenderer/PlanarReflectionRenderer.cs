@@ -10,8 +10,6 @@ namespace JayT.UnityProductionUrpHelper
         [SerializeField] private Transform floorObject;
         [SerializeField] private RenderTexture renderTexture;
         [SerializeField] private LayerMask reflectionLayers;
-        [SerializeField] private float rotationXOffset = 0f;
-        [SerializeField] private float fovMultiplier = 1f;
         [SerializeField] private bool usePostProcessing = true;
 
         private Camera _mainCamera;
@@ -57,13 +55,10 @@ namespace JayT.UnityProductionUrpHelper
             reflectPos.y = 2f * floorY - mainPos.y;
             _reflectionCamera.transform.position = reflectPos;
 
-            Vector3 normal = Vector3.up;
-            Vector3 reflectedForward = Vector3.Reflect(_mainCamera.transform.forward, normal);
-            Quaternion reflectedRotation = Quaternion.LookRotation(reflectedForward, Vector3.up);
+            Vector3 reflectedForward = Vector3.Reflect(_mainCamera.transform.forward, Vector3.up);
+            _reflectionCamera.transform.rotation = Quaternion.LookRotation(reflectedForward, Vector3.up);
 
-            _reflectionCamera.transform.rotation = reflectedRotation * Quaternion.Euler(rotationXOffset, 0f, 0f);
-
-            _reflectionCamera.fieldOfView = _mainCamera.fieldOfView * fovMultiplier;
+            _reflectionCamera.fieldOfView = _mainCamera.fieldOfView;
             _reflectionCamera.nearClipPlane = _mainCamera.nearClipPlane;
             _reflectionCamera.farClipPlane = _mainCamera.farClipPlane;
             _reflectionCamera.aspect = _mainCamera.aspect;

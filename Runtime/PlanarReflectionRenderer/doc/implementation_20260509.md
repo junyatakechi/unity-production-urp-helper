@@ -56,8 +56,6 @@ ReflectionCamera Y = 2 * floorY - MainCamera Y
 | `floorObject` | Transform | 床オブジェクト。Y座標を自動取得 |
 | `renderTexture` | RenderTexture | 出力先RenderTexture |
 | `reflectionLayers` | LayerMask | 反射に映すLayerの指定 |
-| `rotationXOffset` | float | 仮想カメラのX回転オフセット（演出調整用） |
-| `fovMultiplier` | float | FOVの倍率（演出調整用） |
 | `usePostProcessing` | bool | 仮想カメラのPost Processing有効化 |
 
 ### 仮想カメラの位置計算
@@ -70,8 +68,7 @@ reflectPos.y = 2f * floorY - mainPos.y;
 
 ```csharp
 Vector3 reflectedForward = Vector3.Reflect(_mainCamera.transform.forward, Vector3.up);
-Quaternion reflectedRotation = Quaternion.LookRotation(reflectedForward, Vector3.up);
-_reflectionCamera.transform.rotation = reflectedRotation * Quaternion.Euler(rotationXOffset, 0f, 0f);
+_reflectionCamera.transform.rotation = Quaternion.LookRotation(reflectedForward, Vector3.up);
 ```
 
 `reflectedUp`を`Vector3.up`に固定することで左右反転を防ぐ。
@@ -79,7 +76,7 @@ _reflectionCamera.transform.rotation = reflectedRotation * Quaternion.Euler(rota
 ### MainCameraとの同期パラメーター
 
 ```csharp
-_reflectionCamera.fieldOfView  = _mainCamera.fieldOfView * fovMultiplier;
+_reflectionCamera.fieldOfView  = _mainCamera.fieldOfView;
 _reflectionCamera.nearClipPlane = _mainCamera.nearClipPlane;
 _reflectionCamera.farClipPlane  = _mainCamera.farClipPlane;
 _reflectionCamera.aspect        = _mainCamera.aspect;
@@ -97,15 +94,13 @@ CinemachineBrainはLateUpdateでカメラを更新する。
 
 ---
 
-## 演出調整パラメーターについて
+## カメラが水平を向いている場合の反射について
 
-プラナーリフレクションは物理的にカメラが水平を向いている場合、床への入射角がなく反射像が成立しにくい。
-映像作品としての表現のため、以下の調整パラメーターを設けている。
+カメラが水平方向を向いている場合も、プラナーリフレクションは物理的に正しく動作する。
+グレージング入射（grazing incidence）の状態であり、Fresnel効果により反射率はむしろ高くなる。
 
-| パラメーター | 効果 |
-|------|------|
-| `rotationXOffset` | 仮想カメラのX回転をオフセットし、キャラクターを画角に収めやすくする |
-| `fovMultiplier` | FOVを広げ、キャラクターを画角に収めやすくする |
+ただし、水平カメラで床に映るのは**地平線付近の遠景**であり、近距離にいるキャラクターの反射像が
+足元の床に映ることは物理的には起こらない。これは正しい挙動であり、補正は行わない。
 
 ---
 
@@ -176,6 +171,6 @@ fresnel *= _ReflectionStrength;
 | 項目 | 内容 |
 |------|------|
 | 斜め床への非対応 | Y軸のみの対称計算のため、傾いた床には対応しない |
-| オブリーク投影なし | 床の下のオブジェクトが映り込む可能性がある |
+| 床下オブジェクトの映り込み | cullingMaskで反射対象Layerを限定することで対処。床をまたぐオブジェクトはLayer単位でしか制御できない |
 | ブラーの品質 | シェーダー内近似のため高品質ブラーには別途RenderPassが必要 |
-| SSRとの併用なし | 近距離での反射像は演出パラメーターで調整が必要 |
+| SSRとの併用なし | 水平カメラ時の近距離キャラ反射はこの実装では物理的に映らない |
