@@ -48,19 +48,23 @@ namespace JayT.UnityProductionUrpHelper
 
         private void UpdateReflectionCamera()
         {
-            Vector3 mainPos = _mainCamera.transform.position;
+            // Reflection matrix for horizontal plane y = floorY: maps (x,y,z) -> (x, 2f-y, z)
+            var reflectionMatrix = Matrix4x4.identity;
+            reflectionMatrix.m11 = -1f;
+            reflectionMatrix.m13 = 2f * floorY;
 
-            Vector3 reflectPos = mainPos;
-            reflectPos.y = 2f * floorY - mainPos.y;
-            _reflectionCamera.transform.position = reflectPos;
+            // Set view matrix directly: V_reflect = V_main * M_reflect
+            // Correctly handles all camera orientations including Dutch angle (Z-roll)
+            _reflectionCamera.worldToCameraMatrix = _mainCamera.worldToCameraMatrix * reflectionMatrix;
 
-            Vector3 reflectedForward = Vector3.Reflect(_mainCamera.transform.forward, Vector3.up);
-            _reflectionCamera.transform.rotation = Quaternion.LookRotation(reflectedForward, Vector3.up);
+            // Negate Y in projection matrix to match shader's (1 - screenUV.y) correction
+            // The two Y-negations cancel, producing correct winding order without GL.invertCulling
+            var proj = _mainCamera.projectionMatrix;
+            proj.m11 = -proj.m11;
+            _reflectionCamera.projectionMatrix = proj;
 
-            _reflectionCamera.fieldOfView = _mainCamera.fieldOfView;
-            _reflectionCamera.nearClipPlane = _mainCamera.nearClipPlane;
-            _reflectionCamera.farClipPlane = _mainCamera.farClipPlane;
-            _reflectionCamera.aspect = _mainCamera.aspect;
+            // Update transform position for Unity's culling frustum calculations
+            _reflectionCamera.transform.position = reflectionMatrix.MultiplyPoint(_mainCamera.transform.position);
         }
 
         private void RenderReflection()
