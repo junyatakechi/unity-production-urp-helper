@@ -10,6 +10,8 @@ namespace JayT.UnityProductionUrpHelper
         [SerializeField] private Transform floorObject;
         [SerializeField] private RenderTexture renderTexture;
         [SerializeField] private LayerMask reflectionLayers;
+        [SerializeField] private float rotationXOffset = 0f;
+        [SerializeField] private float fovMultiplier = 1f;
 
         private Camera _mainCamera;
         private Camera _reflectionCamera;
@@ -44,25 +46,28 @@ namespace JayT.UnityProductionUrpHelper
             RenderReflection();
         }
 
-private void UpdateReflectionCamera()
-{
-    float floorY = floorObject.position.y;
-    Vector3 mainPos = _mainCamera.transform.position;
+        private void UpdateReflectionCamera()
+        {
+            float floorY = floorObject.position.y;
+            Vector3 mainPos = _mainCamera.transform.position;
 
-    Vector3 reflectPos = mainPos;
-    reflectPos.y = 2f * floorY - mainPos.y;
-    _reflectionCamera.transform.position = reflectPos;
+            Vector3 reflectPos = mainPos;
+            reflectPos.y = 2f * floorY - mainPos.y;
+            _reflectionCamera.transform.position = reflectPos;
 
-    Vector3 normal = Vector3.up;
-    Vector3 reflectedForward = Vector3.Reflect(_mainCamera.transform.forward, normal);
-    Vector3 reflectedUp = Vector3.Reflect(_mainCamera.transform.up, normal);
-    _reflectionCamera.transform.rotation = Quaternion.LookRotation(reflectedForward, reflectedUp);
+            Vector3 normal = Vector3.up;
+            Vector3 reflectedForward = Vector3.Reflect(_mainCamera.transform.forward, normal);
+            Vector3 reflectedUp = Vector3.Reflect(_mainCamera.transform.up, normal);
+            Quaternion reflectedRotation = Quaternion.LookRotation(reflectedForward, reflectedUp);
 
-    _reflectionCamera.fieldOfView = _mainCamera.fieldOfView;
-    _reflectionCamera.nearClipPlane = _mainCamera.nearClipPlane;
-    _reflectionCamera.farClipPlane = _mainCamera.farClipPlane;
-    _reflectionCamera.aspect = _mainCamera.aspect;
-}
+            // X回転オフセットを適用
+            _reflectionCamera.transform.rotation = reflectedRotation * Quaternion.Euler(rotationXOffset, 0f, 0f);
+
+            _reflectionCamera.fieldOfView = _mainCamera.fieldOfView * fovMultiplier;
+            _reflectionCamera.nearClipPlane = _mainCamera.nearClipPlane;
+            _reflectionCamera.farClipPlane = _mainCamera.farClipPlane;
+            _reflectionCamera.aspect = _mainCamera.aspect;
+        }
 
         private void RenderReflection()
         {
