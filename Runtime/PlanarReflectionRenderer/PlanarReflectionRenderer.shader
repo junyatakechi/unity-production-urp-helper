@@ -2,15 +2,16 @@ Shader "JayT/URPHelper/PlanarReflectionFloor"
 {
     Properties
     {
-        _MainTex            ("Floor Texture", 2D)               = "white" {}
-        _BaseColor          ("Base Color", Color)                = (1,1,1,1)
-        _BumpMap            ("Normal Map", 2D)                   = "bump" {}
-        _BumpScale          ("Normal Scale", Range(0, 2))        = 1.0
-        _ReflectionTex      ("Reflection Texture", 2D)          = "black" {}
-        _FresnelPower       ("Fresnel Power", Range(0.1, 10.0))  = 2.0
-        _ReflectionStrength ("Reflection Strength", Range(0.0, 1.0)) = 1.0
-        _BlurSize           ("Blur Size", Range(0.0, 0.02))      = 0.005
-        [IntRange] _BlurSamples ("Blur Samples", Range(4, 8))   = 4
+        _MainTex              ("Floor Texture", 2D)                  = "white" {}
+        _BaseColor            ("Base Color", Color)                   = (1,1,1,1)
+        _BumpMap              ("Normal Map", 2D)                      = "bump" {}
+        _BumpScale            ("Normal Scale", Range(0, 2))           = 1.0
+        _ReflectionTex        ("Reflection Texture", 2D)             = "black" {}
+        _FresnelPower         ("Fresnel Power", Range(0.1, 10.0))     = 2.0
+        _ReflectionStrength   ("Reflection Strength", Range(0.0, 1.0)) = 1.0
+        _ReflectionIntensity  ("Reflection Intensity (HDR)", Range(1.0, 10.0)) = 1.0
+        _BlurSize             ("Blur Size", Range(0.0, 0.02))         = 0.005
+        [IntRange] _BlurSamples ("Blur Samples", Range(4, 8))        = 4
     }
 
     SubShader
@@ -65,6 +66,7 @@ Shader "JayT/URPHelper/PlanarReflectionFloor"
                 float  _BumpScale;
                 float  _FresnelPower;
                 float  _ReflectionStrength;
+                float  _ReflectionIntensity;
                 float  _BlurSize;
                 int    _BlurSamples;
             CBUFFER_END
@@ -132,6 +134,9 @@ Shader "JayT/URPHelper/PlanarReflectionFloor"
 
                 // ブラー付き反射サンプリング
                 half4 reflectionColor = SampleReflectionBlur(screenUV, _BlurSize, _BlurSamples);
+
+                // HDR輝度を乗算
+                reflectionColor.rgb *= _ReflectionIntensity;
 
                 // フレネル
                 float3 viewDirWS = normalize(IN.viewDirWS);
