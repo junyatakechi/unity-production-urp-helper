@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
+using Cinemachine;
 
 namespace JayT.UnityProductionUrpHelper
 {
@@ -17,7 +18,7 @@ namespace JayT.UnityProductionUrpHelper
 
             if (_mainCamera == null)
             {
-                Debug.LogError("MainCamera が見つかりません。MainCamera タグを確認してください。");
+                Debug.LogError("MainCamera が見つかりません。");
                 return;
             }
 
@@ -29,27 +30,21 @@ namespace JayT.UnityProductionUrpHelper
             cameraData.renderType = CameraRenderType.Base;
 
             _reflectionCamera.targetTexture = renderTexture;
+
+            CinemachineCore.CameraUpdatedEvent.AddListener(OnCinemachineCameraUpdated);
         }
 
-        private void LateUpdate()
+        private void OnCinemachineCameraUpdated(CinemachineBrain brain)
         {
+            if (_mainCamera == null || _reflectionCamera == null || floorObject == null)
+                return;
+
             UpdateReflectionCamera();
             RenderReflection();
         }
 
         private void UpdateReflectionCamera()
         {
-            if (_mainCamera == null)
-            {
-                Debug.LogError("_mainCamera is null");
-                return;
-            }
-            if (floorObject == null)
-            {
-                Debug.LogError("floorObject is null");
-                return;
-            }
-
             float floorY = floorObject.position.y;
             Vector3 mainPos = _mainCamera.transform.position;
 
@@ -71,11 +66,15 @@ namespace JayT.UnityProductionUrpHelper
 
         private void RenderReflection()
         {
+            GL.invertCulling = true;
             _reflectionCamera.Render();
+            GL.invertCulling = false;
         }
 
         private void OnDestroy()
         {
+            CinemachineCore.CameraUpdatedEvent.RemoveListener(OnCinemachineCameraUpdated);
+
             if (_reflectionCamera != null)
                 Destroy(_reflectionCamera.gameObject);
         }
