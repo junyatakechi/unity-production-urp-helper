@@ -53,7 +53,7 @@ ReflectionCamera Y = 2 * floorY - MainCamera Y
 
 | パラメーター | 型 | 説明 |
 |------|------|------|
-| `floorObject` | Transform | 床オブジェクト。Y座標を自動取得 |
+| `floorY` | float | 反射平面のワールドY座標。キャラの足元と一致させる |
 | `renderTexture` | RenderTexture | 出力先RenderTexture |
 | `reflectionLayers` | LayerMask | 反射に映すLayerの指定 |
 | `usePostProcessing` | bool | 仮想カメラのPost Processing有効化 |
@@ -71,7 +71,9 @@ Vector3 reflectedForward = Vector3.Reflect(_mainCamera.transform.forward, Vector
 _reflectionCamera.transform.rotation = Quaternion.LookRotation(reflectedForward, Vector3.up);
 ```
 
-`reflectedUp`を`Vector3.up`に固定することで左右反転を防ぐ。
+`LookRotation`の第2引数に`Vector3.up`を固定することで、反射カメラが天地逆転（上下反転）するのを防ぐ。
+床平面の反射では上下軸（Y）が反転するため、そのまま反射したupベクトルは`Vector3.down`になり、カメラが逆さまになる。
+上下反転の補正はシェーダー側の`screenUV.y = 1.0 - screenUV.y`で行う。
 
 ### MainCameraとの同期パラメーター
 
@@ -92,15 +94,6 @@ CinemachineBrainはLateUpdateでカメラを更新する。
 反転処理はシェーダー側（`screenUV.y = 1.0 - screenUV.y`）で行う。
 `PlanarReflectionRenderer`側では反転処理を行わない。
 
----
-
-## カメラが水平を向いている場合の反射について
-
-カメラが水平方向を向いている場合も、プラナーリフレクションは物理的に正しく動作する。
-グレージング入射（grazing incidence）の状態であり、Fresnel効果により反射率はむしろ高くなる。
-
-ただし、水平カメラで床に映るのは**地平線付近の遠景**であり、近距離にいるキャラクターの反射像が
-足元の床に映ることは物理的には起こらない。これは正しい挙動であり、補正は行わない。
 
 ---
 
@@ -170,6 +163,7 @@ fresnel *= _ReflectionStrength;
 
 | 項目 | 内容 |
 |------|------|
+| 反射像のずれ | キャラの足元Yと`floorY`が一致しない場合、足元から反射像がずれる。`floorY`はキャラが実際に立つ床面のワールドY座標に正確に合わせること |
 | 斜め床への非対応 | Y軸のみの対称計算のため、傾いた床には対応しない |
 | 床下オブジェクトの映り込み | cullingMaskで反射対象Layerを限定することで対処。床をまたぐオブジェクトはLayer単位でしか制御できない |
 | ブラーの品質 | シェーダー内近似のため高品質ブラーには別途RenderPassが必要 |

@@ -7,7 +7,7 @@ namespace JayT.UnityProductionUrpHelper
     [DefaultExecutionOrder(1000)]
     public class PlanarReflectionRenderer : MonoBehaviour
     {
-        [SerializeField] private Transform floorObject;
+        [SerializeField] private float floorY = 0f;
         [SerializeField] private RenderTexture renderTexture;
         [SerializeField] private LayerMask reflectionLayers;
         [SerializeField] private bool usePostProcessing = true;
@@ -39,7 +39,7 @@ namespace JayT.UnityProductionUrpHelper
 
         private void LateUpdate()
         {
-            if (_mainCamera == null || _reflectionCamera == null || floorObject == null)
+            if (_mainCamera == null || _reflectionCamera == null)
                 return;
 
             UpdateReflectionCamera();
@@ -48,7 +48,6 @@ namespace JayT.UnityProductionUrpHelper
 
         private void UpdateReflectionCamera()
         {
-            float floorY = floorObject.position.y;
             Vector3 mainPos = _mainCamera.transform.position;
 
             Vector3 reflectPos = mainPos;
