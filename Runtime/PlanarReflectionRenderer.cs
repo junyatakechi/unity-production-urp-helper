@@ -4,10 +4,12 @@ using Cinemachine;
 
 namespace JayT.UnityProductionUrpHelper
 {
+    [DefaultExecutionOrder(1000)]
     public class PlanarReflectionRenderer : MonoBehaviour
     {
         [SerializeField] private Transform floorObject;
         [SerializeField] private RenderTexture renderTexture;
+        [SerializeField] private LayerMask reflectionLayers;
 
         private Camera _mainCamera;
         private Camera _reflectionCamera;
@@ -30,11 +32,10 @@ namespace JayT.UnityProductionUrpHelper
             cameraData.renderType = CameraRenderType.Base;
 
             _reflectionCamera.targetTexture = renderTexture;
-
-            CinemachineCore.CameraUpdatedEvent.AddListener(OnCinemachineCameraUpdated);
+            _reflectionCamera.cullingMask = reflectionLayers;
         }
 
-        private void OnCinemachineCameraUpdated(CinemachineBrain brain)
+        private void LateUpdate()
         {
             if (_mainCamera == null || _reflectionCamera == null || floorObject == null)
                 return;
@@ -66,15 +67,11 @@ namespace JayT.UnityProductionUrpHelper
 
         private void RenderReflection()
         {
-            GL.invertCulling = true;
             _reflectionCamera.Render();
-            GL.invertCulling = false;
         }
 
         private void OnDestroy()
         {
-            CinemachineCore.CameraUpdatedEvent.RemoveListener(OnCinemachineCameraUpdated);
-
             if (_reflectionCamera != null)
                 Destroy(_reflectionCamera.gameObject);
         }
