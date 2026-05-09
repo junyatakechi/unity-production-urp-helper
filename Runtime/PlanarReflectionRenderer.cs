@@ -44,26 +44,25 @@ namespace JayT.UnityProductionUrpHelper
             RenderReflection();
         }
 
-        private void UpdateReflectionCamera()
-        {
-            float floorY = floorObject.position.y;
-            Vector3 mainPos = _mainCamera.transform.position;
+private void UpdateReflectionCamera()
+{
+    float floorY = floorObject.position.y;
+    Vector3 mainPos = _mainCamera.transform.position;
 
-            Vector3 reflectPos = mainPos;
-            reflectPos.y = 2f * floorY - mainPos.y;
-            _reflectionCamera.transform.position = reflectPos;
+    Vector3 reflectPos = mainPos;
+    reflectPos.y = 2f * floorY - mainPos.y;
+    _reflectionCamera.transform.position = reflectPos;
 
-            Vector3 mainEuler = _mainCamera.transform.eulerAngles;
-            _reflectionCamera.transform.eulerAngles = new Vector3(
-                -mainEuler.x,
-                mainEuler.y,
-                mainEuler.z
-            );
+    // 反射ベクトルで正確な向きを算出
+    Vector3 normal = Vector3.up;
+    Vector3 reflectedForward = Vector3.Reflect(_mainCamera.transform.forward, normal);
+    Vector3 reflectedUp = Vector3.Reflect(_mainCamera.transform.up, normal);
+    _reflectionCamera.transform.rotation = Quaternion.LookRotation(reflectedForward, reflectedUp);
 
-            _reflectionCamera.fieldOfView = _mainCamera.fieldOfView;
-            _reflectionCamera.nearClipPlane = _mainCamera.nearClipPlane;
-            _reflectionCamera.farClipPlane = _mainCamera.farClipPlane;
-        }
+    _reflectionCamera.fieldOfView = _mainCamera.fieldOfView;
+    _reflectionCamera.nearClipPlane = _mainCamera.nearClipPlane;
+    _reflectionCamera.farClipPlane = _mainCamera.farClipPlane;
+}
 
         private void RenderReflection()
         {
