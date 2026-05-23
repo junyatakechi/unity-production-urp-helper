@@ -14,12 +14,17 @@ public class BaseLightController : MonoBehaviour
     public float fadeInSpeed = 1.0f;
     public float fadeOutSpeed = 5.0f;
 
+    [Header("戻り始めるまでの待機時間")]
+    public float holdTime = 0.5f;
+
     [Header("ムービングライトのTag")]
     public string movingLightTag = "MovingLight";
 
     private float baseLightIntensity;
     private float targetIntensity;
     private Light[] movingLights;
+    private float holdTimer = 0f;
+    private bool isHit = false;
 
     void Start()
     {
@@ -41,7 +46,7 @@ public class BaseLightController : MonoBehaviour
 
     void Update()
     {
-        targetIntensity = baseLightIntensity;
+        bool currentHit = false;
 
         foreach (Light movingLight in movingLights)
         {
@@ -49,10 +54,28 @@ public class BaseLightController : MonoBehaviour
 
             if (IsLightHittingCharacter(movingLight))
             {
-                targetIntensity = dimmedIntensity;
+                currentHit = true;
                 break;
             }
         }
+
+        if (currentHit)
+        {
+            // 当たっている間はタイマーをリセットしてDimmed維持
+            isHit = true;
+            holdTimer = holdTime;
+        }
+        else if (isHit)
+        {
+            // 外れたらタイマーをカウントダウン
+            holdTimer -= Time.deltaTime;
+            if (holdTimer <= 0f)
+            {
+                isHit = false;
+            }
+        }
+
+        targetIntensity = isHit ? dimmedIntensity : baseLightIntensity;
 
         float speed = baseLight.intensity > targetIntensity ? fadeOutSpeed : fadeInSpeed;
         baseLight.intensity = Mathf.Lerp(baseLight.intensity, targetIntensity, Time.deltaTime * speed);
