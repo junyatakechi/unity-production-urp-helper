@@ -4,6 +4,10 @@ using System.IO;
 
 namespace JayT.UnityProductionUrpHelper.Editor
 {
+    /// <summary>
+    /// FBX内のAnimationClipは直接編集できないため、
+    /// 独立した.animファイルとして抽出することで自由に編集・再利用できるようにするEditorWindow。
+    /// </summary>
     public class ExtractAnimationClips : EditorWindow
     {
         private string sourceFolderPath = "Assets/FBX";

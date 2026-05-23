@@ -2,6 +2,12 @@ using UnityEngine;
 
 namespace JayT.UnityProductionUrpHelper
 {
+/// <summary>
+/// ライトは加算合成のため、白ライト（地明かり）が明るいままだと
+/// ムービングライトのカラーが白に飲み込まれて見えなくなる。
+/// このコンポーネントを使うことで、手動で照明フェーダーを操作せずに
+/// カラーライトの発色を自動で確保できる。
+/// </summary>
 public class SyncBaseLightIntensity : MonoBehaviour
 {
     // ---------------------------------------------------------------

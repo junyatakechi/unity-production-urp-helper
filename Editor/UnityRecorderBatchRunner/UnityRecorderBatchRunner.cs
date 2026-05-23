@@ -8,8 +8,9 @@ using System.IO;
 namespace JayT.UnityProductionUrpHelper.UnityRecorderBatchRunner
 {
     /// <summary>
-    /// JSONキューを読み込み、1件ずつシーンを開いてPlayModeに入るEditorWindow。
-    /// 録画の実際の制御はBatchRecordingSessionが行う。
+    /// Unity Recorderは1シーン分の録画しか手動でしか行えないため、
+    /// 複数シーンを連続して自動レンダリングするために作ったEditorWindow。
+    /// JSONで定義したキューを順に処理し、シーン切り替えからPlayMode入場・録画・次シーンへの移行を自動化する。
     /// </summary>
     public class UnityRecorderBatchRunner : EditorWindow
     {

@@ -3,6 +3,10 @@ using UnityEngine;
 
 namespace JayT.UnityProductionUrpHelper
 {
+    /// <summary>
+    /// カメラのLook Targetや追従オブジェクトなど、別オブジェクトと同じ動きをさせたい場合に使う。
+    /// Constraintと異なり、軸ごとのコピー有無・オフセット・スケールをInspectorで柔軟に設定できる。
+    /// </summary>
     public class TransformProxy : MonoBehaviour
     {
         public enum SearchMethod

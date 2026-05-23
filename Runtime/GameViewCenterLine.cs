@@ -4,10 +4,8 @@ using UnityEngine.Rendering;
 namespace JayT.UnityProductionUrpHelper
 {
     /// <summary>
-    /// Gameビューにセンター線やグリッドを描画するカメラオーバーレイ。
-    /// 任意の GameObject にアタッチして使用します。
-    /// ターゲットカメラを指定しない場合は Camera.main を使用します。
-    /// [ExecuteAlways] により再生中・停止中どちらでも描画されます。
+    /// カメラワークの画角決めに「三分割グリッド」を手軽に活用するためのコンポーネント。
+    /// 三分割法のガイド線を意識しながら構図を組むことで、直感に頼らず安定して良い画角を作れる。
     /// </summary>
     [ExecuteAlways]
     [AddComponentMenu("JayT/Game View Center Line")]

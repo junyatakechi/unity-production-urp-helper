@@ -3,58 +3,13 @@ using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.Timeline;
-using UnityEngine;
-using UnityEngine.Timeline;
 
 namespace JayT.UnityProductionUrpHelper
 {
     /// <summary>
-    /// Timelineのアニメーショントラックの指定フレーム範囲を.animファイルに書き出すエディタ拡張。
-    ///
-    /// 使い方：
-    /// TimelineエディタのAnimationトラック上のクリップを右クリック
-    /// → "Export Range as AnimationClip" を選択
-    /// → 開始・終了フレームを入力して実行
-    /// → Assets/ExportedClips/ に保存される
-    ///
-    /// 制限：
-    /// - Generic（Transformベース）のみ対応。
-    /// - HumanoidのMuscle曲線はUnity公式APIで取得不可のため非対応。
+    /// Unityにはタイムラインに書き込んだアニメーションを.animクリップとして書き出す機能がないため、
+    /// 指定フレーム範囲のアニメーションを独立した.animファイルとして書き出せるようにするエディタ拡張。
     /// </summary>
-    [InitializeOnLoad]
-    static class AnimationClipExporterSelectionCache
-    {
-        static List<AnimationTrack> _cachedTracks = new();
-        static float _cachedFrameRate = 60f;
-        static UnityEngine.Object[] _lastKnownSelection = new UnityEngine.Object[0];
-
-        static AnimationClipExporterSelectionCache()
-        {
-            EditorApplication.update += PollSelection;
-        }
-
-        static void PollSelection()
-        {
-            var current = Selection.objects;
-            if (current == _lastKnownSelection) return;
-            _lastKnownSelection = current;
-
-            _cachedTracks = current
-                .OfType<AnimationTrack>()
-                .ToList();
-
-            var asset = TimelineEditor.inspectedAsset;
-            if (asset != null)
-                _cachedFrameRate = (float)asset.editorSettings.frameRate;
-
-            foreach (var w in Resources.FindObjectsOfTypeAll<ExportRangeDialog>())
-                w.Repaint();
-        }
-
-        public static List<AnimationTrack> GetTracks() => _cachedTracks;
-        public static float GetFrameRate() => _cachedFrameRate;
-    }
-
     public static class GenericOnlyAnimationClipExporter
     {
         private const string OutputFolder = "Assets/ExportedClips";

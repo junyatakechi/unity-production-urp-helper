@@ -7,6 +7,12 @@ using UnityEngine.Timeline;
 
 namespace JayT.UnityProductionUrpHelper
 {
+    /// <summary>
+    /// Timelineのトラックバインディングはシーンを跨いで設定できないため、
+    /// マルチシーン構成（Additiveロードなど）では別シーンのオブジェクトをトラックにアサインできない。
+    /// このコンポーネントを使うことで、トラック名とオブジェクト名の対応をInspectorで定義し、
+    /// 実行時に名前解決して自動でバインディングを行う。
+    /// </summary>
     [ExecuteAlways]
     [RequireComponent(typeof(PlayableDirector))]
     public class TimelineBindingResolver : MonoBehaviour
