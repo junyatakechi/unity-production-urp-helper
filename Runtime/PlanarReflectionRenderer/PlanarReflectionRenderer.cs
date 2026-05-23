@@ -4,6 +4,10 @@ using Cinemachine;
 
 namespace JayT.UnityProductionUrpHelper
 {
+    /// <summary>
+    /// URPには平面反射の標準機能がないため、
+    /// 床へのアバターなどの鏡面反射像を手軽に表示できるようにするコンポーネント。
+    /// </summary>
     [DefaultExecutionOrder(1000)]
     public class PlanarReflectionRenderer : MonoBehaviour
     {
