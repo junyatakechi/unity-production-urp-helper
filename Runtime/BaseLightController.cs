@@ -14,15 +14,29 @@ public class BaseLightController : MonoBehaviour
     public float fadeInSpeed = 1.0f;
     public float fadeOutSpeed = 5.0f;
 
-    [Header("ムービングライト")]
-    public Light[] movingLights;
+    [Header("ムービングライトのTag")]
+    public string movingLightTag = "MovingLight";
 
     private float baseLightIntensity;
     private float targetIntensity;
+    private Light[] movingLights;
 
     void Start()
     {
         baseLightIntensity = baseLight.intensity;
+        RefreshMovingLights();
+    }
+
+    void RefreshMovingLights()
+    {
+        var gameObjects = GameObject.FindGameObjectsWithTag(movingLightTag);
+        var lights = new System.Collections.Generic.List<Light>();
+        foreach (var go in gameObjects)
+        {
+            var light = go.GetComponent<Light>();
+            if (light != null) lights.Add(light);
+        }
+        movingLights = lights.ToArray();
     }
 
     void Update()
