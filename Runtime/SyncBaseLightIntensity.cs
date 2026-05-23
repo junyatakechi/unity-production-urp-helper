@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace JayT.UnityProductionUrpHelper
 {
-public class BaseLightController : MonoBehaviour
+public class SyncBaseLightIntensity: MonoBehaviour
 {
     // ---------------------------------------------------------------
     // 設計方針
@@ -25,7 +25,7 @@ public class BaseLightController : MonoBehaviour
     [Header("ステージ中央のTransform")]
     // キャラクターごとではなくステージ中央を基準にする
     public Transform stageCenter;
-    
+
     [Header("白ライト（地明かり）")]
     // ムービングライトが当たっていない時にキャラを照らす白いライト
     public Light baseLight;
