@@ -11,7 +11,7 @@ namespace JayT.UnityProductionUrpHelper
     [DefaultExecutionOrder(1000)]
     public class PlanarReflectionRenderer : MonoBehaviour
     {
-        [SerializeField] private float floorY = 0f;
+        [SerializeField] private Transform floorSurfaceTransform;
         [SerializeField] private RenderTexture renderTexture;
         [SerializeField] private LayerMask reflectionLayers;
         [SerializeField] private bool usePostProcessing = true;
@@ -52,6 +52,8 @@ namespace JayT.UnityProductionUrpHelper
 
         private void UpdateReflectionCamera()
         {
+            var floorY = floorSurfaceTransform != null ? floorSurfaceTransform.position.y : 0f;
+
             // Reflection matrix for horizontal plane y = floorY: maps (x,y,z) -> (x, 2f-y, z)
             var reflectionMatrix = Matrix4x4.identity;
             reflectionMatrix.m11 = -1f;
